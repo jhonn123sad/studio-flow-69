@@ -35,9 +35,6 @@ function AuthenticatedLayout() {
   const { user, isLoading } = useAuth();
   const navigate = Route.useNavigate();
 
-  // O Supabase agora está sempre configurado via fallback manual no client.ts
-  const isSupabaseConfigured = true;
-
   useEffect(() => {
     // Redireciona para login se não houver usuário após o carregamento
     if (!isLoading && !user) {
@@ -50,7 +47,7 @@ function AuthenticatedLayout() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground animate-pulse">Carregando painel...</p>
+          <p className="text-sm text-muted-foreground animate-pulse">Carregando...</p>
         </div>
       </div>
     );
