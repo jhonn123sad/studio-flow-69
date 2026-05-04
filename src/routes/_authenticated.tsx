@@ -35,11 +35,16 @@ function AuthenticatedLayout() {
   const { user, isLoading } = useAuth();
   const navigate = Route.useNavigate();
 
+  // Verifica se o Supabase está configurado (variáveis de ambiente presentes)
+  const isSupabaseConfigured = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
+
   useEffect(() => {
-    if (!isLoading && !user) {
+    // Só redireciona se o Supabase estiver configurado. 
+    // Se não estiver, permitimos o acesso ao dashboard (que mostrará dados mockados/vazios) para evitar o loop de erro.
+    if (!isLoading && !user && isSupabaseConfigured) {
       navigate({ to: "/login" });
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, navigate, isSupabaseConfigured]);
 
   if (isLoading) {
     return (
@@ -52,7 +57,8 @@ function AuthenticatedLayout() {
     );
   }
 
-  if (!user) return null;
+  // Se não estiver logado e o Supabase estiver configurado, não renderizamos nada (o useEffect redirecionará)
+  if (!user && isSupabaseConfigured) return null;
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -61,6 +67,20 @@ function AuthenticatedLayout() {
         <Topbar />
         <main className="flex-1 p-6 md:p-8">
           <div className="max-w-7xl mx-auto w-full space-y-8 animate-in fade-in duration-500">
+            {!isSupabaseConfigured && (
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-6 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
+                  <AlertCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <h4 className="text-amber-500 font-bold text-sm">Configuração Necessária</h4>
+                  <p className="text-xs text-amber-500/80">
+                    O Supabase ainda não foi conectado. Conecte sua conta na aba "Integrations" para usar dados reais.
+                    O app está operando em modo de demonstração.
+                  </p>
+                </div>
+              </div>
+            )}
             <Outlet />
           </div>
         </main>
