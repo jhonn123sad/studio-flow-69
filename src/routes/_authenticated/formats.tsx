@@ -43,6 +43,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { handleError } from "@/lib/error-handler";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/formats")({
   component: FormatsPage,
@@ -83,7 +85,7 @@ function FormatsPage() {
     }
   });
 
-  const formats = formatsData?.map(f => ({
+  const formats = formatsData?.map((f: any) => ({
     id: f.id,
     title: f.title,
     description: f.description,
@@ -96,7 +98,7 @@ function FormatsPage() {
     defaultValues: { status: "Ativo", description: "", tags: "" }
   });
 
-  const filteredFormats = formats.filter(f => 
+  const filteredFormats = formats.filter((f: any) => 
     f.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     f.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -263,7 +265,7 @@ function FormatsPage() {
             </div>
           ) : (
             <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "space-y-4"}>
-              {filteredFormats.map((format) => (
+              {filteredFormats.map((format: any) => (
                 <Card key={format.id} className="group hover:border-primary/40 transition-all shadow-sm">
                   <CardHeader className="flex flex-row items-start justify-between pb-2">
                     <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -291,7 +293,7 @@ function FormatsPage() {
                       {format.description}
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {format.tags.map(tag => (
+                      {format.tags.map((tag: string) => (
                         <Badge key={tag} variant="secondary" className="text-[10px] font-medium bg-muted/50">
                           {tag}
                         </Badge>
