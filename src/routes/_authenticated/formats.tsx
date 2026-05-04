@@ -62,12 +62,34 @@ function FormatsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  const [formats, setFormats] = useState([
-    { id: "1", title: "Vídeo Curto (Reels/TikTok)", description: "Vídeos verticais de até 60 segundos com edição dinâmica.", status: "Ativo", tags: ["Vídeo", "Social"] },
-    { id: "2", title: "Newsletter Semanal", description: "Informativo por e-mail com curadoria de conteúdos e novidades.", status: "Em Produção", tags: ["Escrita", "E-mail"] },
-    { id: "3", title: "Carrossel Educativo", description: "Sequência de imagens para Instagram explicando um conceito.", status: "Ativo", tags: ["Design", "Social"] },
-    { id: "4", title: "Podcast: Entrevistas", description: "Áudio longo gravado com convidados sobre temas técnicos.", status: "Arquivado", tags: ["Áudio", "Long-form"] },
-  ]);
+  const { data: formatsData } = useQuery({
+    queryKey: ["formats"],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from("formats")
+          .select("*")
+          .order("created_at", { ascending: false });
+        
+        if (error) {
+          console.error("Formats Fetch Error:", error.message);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error("Formats Critical Error:", err);
+        return [];
+      }
+    }
+  });
+
+  const formats = formatsData?.map(f => ({
+    id: f.id,
+    title: f.title,
+    description: f.description,
+    status: f.status,
+    tags: f.tags || []
+  })) || [];
 
   const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<any>({
     resolver: zodResolver(formatSchema),

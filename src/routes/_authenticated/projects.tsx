@@ -38,18 +38,21 @@ function ProjectsPage() {
   const { data: projectsData, isLoading } = useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("projects")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
-      if (error) {
-        if (error.code === 'PGRST116' || error.message.includes('relation "projects" does not exist')) {
+      try {
+        const { data, error } = await supabase
+          .from("projects")
+          .select("*")
+          .order("created_at", { ascending: false });
+        
+        if (error) {
+          console.error("Projects Fetch Error:", error.message);
           return [];
         }
-        throw error;
+        return data || [];
+      } catch (err) {
+        console.error("Projects Critical Error:", err);
+        return [];
       }
-      return data || [];
     }
   });
 

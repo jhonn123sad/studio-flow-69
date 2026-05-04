@@ -33,8 +33,17 @@ function ReferencesPage() {
   const { data: categoriesData } = useQuery({
     queryKey: ["reference-categories"],
     queryFn: async () => {
-      const { data } = await supabase.from("reference_categories").select("*, references(count)");
-      return data || [];
+      try {
+        const { data, error } = await supabase.from("reference_categories").select("*, references(count)");
+        if (error) {
+          console.error("Reference Categories Error:", error.message);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error("Reference Categories Critical Error:", err);
+        return [];
+      }
     }
   });
 
@@ -42,11 +51,20 @@ function ReferencesPage() {
     queryKey: ["reference-topics", selectedCategory],
     enabled: !!selectedCategory,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("references")
-        .select("*")
-        .eq("category_id", selectedCategory);
-      return data || [];
+      try {
+        const { data, error } = await supabase
+          .from("references")
+          .select("*")
+          .eq("category_id", selectedCategory);
+        if (error) {
+          console.error("Reference Topics Error:", error.message);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error("Reference Topics Critical Error:", err);
+        return [];
+      }
     }
   });
 
