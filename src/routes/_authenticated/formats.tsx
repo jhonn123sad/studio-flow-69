@@ -69,7 +69,7 @@ function FormatsPage() {
     { id: "4", title: "Podcast: Entrevistas", description: "Áudio longo gravado com convidados sobre temas técnicos.", status: "Arquivado", tags: ["Áudio", "Long-form"] },
   ]);
 
-  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<FormatFormValues>({
+  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<any>({
     resolver: zodResolver(formatSchema),
     defaultValues: { status: "Ativo", description: "", tags: "" }
   });
