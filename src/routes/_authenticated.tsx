@@ -45,7 +45,7 @@ function AuthenticatedLayout() {
     // Só redireciona se o Supabase estiver configurado. 
     // Se não estiver, permitimos o acesso ao dashboard (que mostrará dados mockados/vazios) para evitar o loop de erro.
     if (!isLoading && !user && isSupabaseConfigured) {
-      navigate({ to: "/login" });
+      navigate({ to: "/login", replace: true });
     }
   }, [user, isLoading, navigate, isSupabaseConfigured]);
 
