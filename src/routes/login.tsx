@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { handleError } from "@/lib/error-handler";
+import { toast } from "sonner";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "E-mail inválido" }),
