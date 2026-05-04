@@ -6,7 +6,6 @@ import {
   MoreHorizontal, 
   Grid,
   List,
-  Filter,
   Trash2,
   Edit2
 } from "lucide-react";
@@ -43,6 +42,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { handleError } from "@/lib/error-handler";
 
 export const Route = createFileRoute("/_authenticated/formats")({
   component: FormatsPage,
@@ -80,23 +80,31 @@ function FormatsPage() {
   );
 
   const onSubmit = (data: FormatFormValues) => {
-    const newFormat = {
-      id: Math.random().toString(36).substr(2, 9),
-      title: data.title,
-      description: data.description || "",
-      status: data.status,
-      tags: data.tags ? data.tags.split(",").map(t => t.trim()) : [],
-    };
-    
-    setFormats([newFormat, ...formats]);
-    setIsCreateDialogOpen(false);
-    reset();
-    toast.success("Formato criado com sucesso!");
+    try {
+      const newFormat = {
+        id: Math.random().toString(36).substr(2, 9),
+        title: data.title,
+        description: data.description || "",
+        status: data.status,
+        tags: data.tags ? data.tags.split(",").map(t => t.trim()) : [],
+      };
+      
+      setFormats([newFormat, ...formats]);
+      setIsCreateDialogOpen(false);
+      reset();
+      toast.success("Formato criado com sucesso!");
+    } catch (error) {
+      handleError(error, "Create Format");
+    }
   };
 
   const deleteFormat = (id: string) => {
-    setFormats(formats.filter(f => f.id !== id));
-    toast.success("Formato removido.");
+    try {
+      setFormats(formats.filter(f => f.id !== id));
+      toast.success("Formato removido.");
+    } catch (error) {
+      handleError(error, "Delete Format");
+    }
   };
 
   return (
