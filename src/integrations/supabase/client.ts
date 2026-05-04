@@ -1,20 +1,24 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Usamos as variáveis recomendadas para Vite.
-// O Lovable injeta estas variáveis quando a integração está ativa.
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL_FALLBACK || "";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+// Dados reais do Supabase do usuário como fallback explícito
+const fallbackSupabaseUrl = "https://gxkavqgjiunwqbhqhsuy.supabase.co";
+const fallbackSupabaseKey = "sb_publishable_I7vku5wUpmeHhoHC0IFyZA_sU9LoWHh";
 
-// Log amigável apenas em desenvolvimento
-if (!supabaseUrl || !supabaseAnonKey) {
-  if (import.meta.env.DEV) {
-    console.warn("Supabase credentials missing. App will only work after connecting Supabase via 'Integrations' tab.");
-  }
-}
+// Tenta carregar das variáveis do Vite, senão usa o fallback
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || fallbackSupabaseUrl;
+const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 
+                    import.meta.env.VITE_SUPABASE_ANON_KEY || 
+                    fallbackSupabaseKey;
 
-// Criamos o cliente de forma segura. Se as credenciais estiverem vazias, 
-// o @supabase/supabase-js não quebra imediatamente, mas as chamadas falharão graciosamente.
-export const supabase = createClient(
-  supabaseUrl || "https://placeholder-gxkavqgjiunwqbhqhsuy.supabase.co", 
-  supabaseAnonKey || "sb_publishable_placeholder"
-);
+// Flag para verificar se as configurações básicas existem (sempre true agora devido ao fallback)
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseKey);
+
+// Cria o cliente único oficial do projeto
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storage: window.localStorage,
+  },
+});

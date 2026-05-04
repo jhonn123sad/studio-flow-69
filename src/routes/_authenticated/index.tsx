@@ -13,6 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: DashboardPage,
@@ -20,20 +22,44 @@ export const Route = createFileRoute("/_authenticated/")({
 
 function DashboardPage() {
   const { user } = useAuth();
+  const { data: statsData, isLoading: isLoadingStats } = useQuery({
+    queryKey: ["dashboard-stats"],
+    queryFn: async () => {
+      const [{ count: formats }, { count: refs }, { count: projects }] = await Promise.all([
+        supabase.from("formats").select("*", { count: "exact", head: true }),
+        supabase.from("references").select("*", { count: "exact", head: true }),
+        supabase.from("projects").select("*", { count: "exact", head: true }),
+      ]);
+      return { formats, refs, projects };
+    }
+  });
 
-  // MOCK DATA - PLACEHOLDER
+  const { data: recentProjectsData } = useQuery({
+    queryKey: ["recent-projects"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("projects")
+        .select("*")
+        .order("updated_at", { ascending: false })
+        .limit(3);
+      return data || [];
+    }
+  });
+
   const stats = [
-    { title: "Formatos", value: "12", icon: Video, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { title: "Referências", value: "48", icon: Bookmark, color: "text-purple-500", bg: "bg-purple-500/10" },
-    { title: "Projetos Ativos", value: "5", icon: Briefcase, color: "text-amber-500", bg: "bg-amber-500/10" },
-    { title: "Tasks Pendentes", value: "24", icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    { title: "Formatos", value: statsData?.formats?.toString() || "0", icon: Video, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { title: "Referências", value: statsData?.refs?.toString() || "0", icon: Bookmark, color: "text-purple-500", bg: "bg-purple-500/10" },
+    { title: "Projetos Ativos", value: statsData?.projects?.toString() || "0", icon: Briefcase, color: "text-amber-500", bg: "bg-amber-500/10" },
+    { title: "Tasks Pendentes", value: "0", icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-500/10" },
   ];
 
-  const recentProjects = [
-    { id: "1", title: "Lançamento Curso IA", status: "Em Produção", priority: "Alta", deadline: "15 Mai" },
-    { id: "2", title: "Série YouTube: Productivity", status: "Ideias", priority: "Média", deadline: "22 Mai" },
-    { id: "3", title: "Rebranding Instagram", status: "Concluído", priority: "Baixa", deadline: "01 Mai" },
-  ];
+  const recentProjects = recentProjectsData?.map(p => ({
+    id: p.id,
+    title: p.title,
+    status: p.status,
+    priority: p.priority,
+    deadline: p.deadline ? new Date(p.deadline).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : "S/D"
+  })) || [];
 
   return (
     <div className="space-y-10 pb-10">

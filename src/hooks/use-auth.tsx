@@ -22,8 +22,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const checkSession = async () => {
       try {
-        // Verifica se o supabase está configurado antes de tentar getSession
-        const isConfigured = !!(import.meta.env.VITE_SUPABASE_URL && (import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY));
+        // O supabase agora sempre tem fallback, então consideramos configurado
+        const isConfigured = true;
         
         if (!isConfigured) {
           if (mounted) setIsLoading(false);
