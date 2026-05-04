@@ -50,6 +50,8 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   component: ProjectDetailPage,
@@ -59,19 +61,71 @@ function ProjectDetailPage() {
   const { projectId } = Route.useParams();
   const navigate = Route.useNavigate();
 
-  // MOCK DATA - PLACEHOLDER
-  const project = {
-    id: projectId,
-    title: "Lançamento Curso IA",
-    description: "Planejamento e produção de conteúdo para o lançamento do curso de automação com IA.",
-    status: "Em Produção",
-    priority: "Alta",
-    startDate: "01/05/2024",
-    deadline: "15/05/2024",
-    tags: ["Lançamento", "Curso", "IA"],
-    progress: 65,
-    cover: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=800"
-  };
+  const { data: projectData, isLoading } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from("projects")
+          .select("*")
+          .eq("id", projectId)
+          .single();
+          
+        if (error) {
+          console.error("Project Fetch Error:", error.message);
+          return null;
+        }
+        return data;
+      } catch (err) {
+        console.error("Project Critical Error:", err);
+        return null;
+      }
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground">Carregando projeto...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se não encontrar o projeto ou der erro, mostramos um estado amigável
+  const project = projectData ? {
+    id: projectData.id,
+    title: projectData.title,
+    description: projectData.description || "Sem descrição",
+    status: projectData.status,
+    priority: projectData.priority,
+    startDate: projectData.created_at ? new Date(projectData.created_at).toLocaleDateString('pt-BR') : "-",
+    deadline: projectData.deadline ? new Date(projectData.deadline).toLocaleDateString('pt-BR') : "-",
+    tags: projectData.tags || [],
+    progress: projectData.progress || 0,
+    cover: projectData.cover_url || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800"
+  } : null;
+
+  if (!project) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+          <AlertCircle className="h-8 w-8" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold">Projeto não encontrado</h3>
+          <p className="text-muted-foreground max-w-xs mx-auto">
+            O projeto solicitado não existe ou você não tem permissão para acessá-lo.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => navigate({ to: "/projects" })}>
+          Voltar para Projetos
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-10">

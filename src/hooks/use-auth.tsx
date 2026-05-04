@@ -22,27 +22,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const checkSession = async () => {
       try {
-        // O supabase agora sempre tem fallback, então consideramos configurado
-        const isConfigured = true;
-        
-        if (!isConfigured) {
-          if (mounted) setIsLoading(false);
-          return;
-        }
-
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
         if (error) {
           console.error("Auth Session Error:", error.message);
-          if (mounted) setIsLoading(false);
+          if (mounted) {
+            setSession(null);
+            setUser(null);
+            setIsLoading(false);
+          }
           return;
         }
         
         if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
+          setSession(data?.session ?? null);
+          setUser(data?.session?.user ?? null);
         }
       } catch (err) {
         console.error("Critical Auth Error:", err);
+        if (mounted) {
+          setSession(null);
+          setUser(null);
+        }
       } finally {
         if (mounted) setIsLoading(false);
       }

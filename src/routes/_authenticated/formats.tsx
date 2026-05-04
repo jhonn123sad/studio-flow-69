@@ -43,6 +43,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { handleError } from "@/lib/error-handler";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/formats")({
   component: FormatsPage,
@@ -62,49 +64,96 @@ function FormatsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  const [formats, setFormats] = useState([
-    { id: "1", title: "Vídeo Curto (Reels/TikTok)", description: "Vídeos verticais de até 60 segundos com edição dinâmica.", status: "Ativo", tags: ["Vídeo", "Social"] },
-    { id: "2", title: "Newsletter Semanal", description: "Informativo por e-mail com curadoria de conteúdos e novidades.", status: "Em Produção", tags: ["Escrita", "E-mail"] },
-    { id: "3", title: "Carrossel Educativo", description: "Sequência de imagens para Instagram explicando um conceito.", status: "Ativo", tags: ["Design", "Social"] },
-    { id: "4", title: "Podcast: Entrevistas", description: "Áudio longo gravado com convidados sobre temas técnicos.", status: "Arquivado", tags: ["Áudio", "Long-form"] },
-  ]);
+  const { data: formatsData } = useQuery({
+    queryKey: ["formats"],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from("formats")
+          .select("*")
+          .order("created_at", { ascending: false });
+        
+        if (error) {
+          console.error("Formats Fetch Error:", error.message);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error("Formats Critical Error:", err);
+        return [];
+      }
+    }
+  });
+
+  const formats = formatsData?.map((f: any) => ({
+    id: f.id,
+    title: f.title,
+    description: f.description,
+    status: f.status,
+    tags: f.tags || []
+  })) || [];
 
   const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<any>({
     resolver: zodResolver(formatSchema),
     defaultValues: { status: "Ativo", description: "", tags: "" }
   });
 
-  const filteredFormats = formats.filter(f => 
+  const filteredFormats = formats.filter((f: any) => 
     f.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     f.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const onSubmit = (data: FormatFormValues) => {
-    try {
-      const newFormat = {
-        id: Math.random().toString(36).substr(2, 9),
-        title: data.title,
-        description: data.description || "",
-        status: data.status,
-        tags: data.tags ? data.tags.split(",").map(t => t.trim()) : [],
-      };
-      
-      setFormats([newFormat, ...formats]);
+  const queryClient = useQueryClient();
+
+  const createMutation = useMutation({
+    mutationFn: async (newFormat: any) => {
+      const { data, error } = await supabase
+        .from("formats")
+        .insert([newFormat])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["formats"] });
       setIsCreateDialogOpen(false);
       reset();
       toast.success("Formato criado com sucesso!");
-    } catch (error) {
+    },
+    onError: (error) => {
       handleError(error, "Create Format");
     }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("formats")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["formats"] });
+      toast.success("Formato removido.");
+    },
+    onError: (error) => {
+      handleError(error, "Delete Format");
+    }
+  });
+
+  const onSubmit = (data: FormatFormValues) => {
+    createMutation.mutate({
+      title: data.title,
+      description: data.description || "",
+      status: data.status,
+      tags: data.tags ? data.tags.split(",").map((t: string) => t.trim()) : [],
+    });
   };
 
   const deleteFormat = (id: string) => {
-    try {
-      setFormats(formats.filter(f => f.id !== id));
-      toast.success("Formato removido.");
-    } catch (error) {
-      handleError(error, "Delete Format");
-    }
+    deleteMutation.mutate(id);
   };
 
   return (
@@ -216,7 +265,7 @@ function FormatsPage() {
             </div>
           ) : (
             <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "space-y-4"}>
-              {filteredFormats.map((format) => (
+              {filteredFormats.map((format: any) => (
                 <Card key={format.id} className="group hover:border-primary/40 transition-all shadow-sm">
                   <CardHeader className="flex flex-row items-start justify-between pb-2">
                     <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -244,7 +293,7 @@ function FormatsPage() {
                       {format.description}
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {format.tags.map(tag => (
+                      {format.tags.map((tag: string) => (
                         <Badge key={tag} variant="secondary" className="text-[10px] font-medium bg-muted/50">
                           {tag}
                         </Badge>

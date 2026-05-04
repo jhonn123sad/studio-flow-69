@@ -24,25 +24,47 @@ function DashboardPage() {
   const { user } = useAuth();
   const { data: statsData, isLoading: isLoadingStats } = useQuery({
     queryKey: ["dashboard-stats"],
+    enabled: !!user?.id,
     queryFn: async () => {
-      const [{ count: formats }, { count: refs }, { count: projects }] = await Promise.all([
-        supabase.from("formats").select("*", { count: "exact", head: true }),
-        supabase.from("references").select("*", { count: "exact", head: true }),
-        supabase.from("projects").select("*", { count: "exact", head: true }),
-      ]);
-      return { formats, refs, projects };
+      try {
+        const [formatsRes, refsRes, projectsRes] = await Promise.all([
+          supabase.from("formats").select("*", { count: "exact", head: true }),
+          supabase.from("references").select("*", { count: "exact", head: true }),
+          supabase.from("projects").select("*", { count: "exact", head: true }),
+        ]);
+        
+        return { 
+          formats: formatsRes.count || 0, 
+          refs: refsRes.count || 0, 
+          projects: projectsRes.count || 0 
+        };
+      } catch (err) {
+        console.error("Dashboard Stats Fetch Error:", err);
+        return { formats: 0, refs: 0, projects: 0 };
+      }
     }
   });
 
   const { data: recentProjectsData } = useQuery({
     queryKey: ["recent-projects"],
+    enabled: !!user?.id,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("projects")
-        .select("*")
-        .order("updated_at", { ascending: false })
-        .limit(3);
-      return data || [];
+      try {
+        const { data, error } = await supabase
+          .from("projects")
+          .select("*")
+          .order("updated_at", { ascending: false })
+          .limit(3);
+          
+        if (error) {
+          console.error("Recent Projects Fetch Error:", error.message);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error("Recent Projects Critical Error:", err);
+        return [];
+      }
     }
   });
 
