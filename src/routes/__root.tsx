@@ -1,58 +1,37 @@
-import { Outlet, createRootRoute } from "@tanstack/react-router";
-import { AuthProvider } from "@/hooks/use-auth";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "sonner";
-import { ErrorBoundary, FallbackProps } from "react-error-boundary";
+import { createRootRoute } from "@tanstack/react-router";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-function GlobalErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
+function EmergencyApp() {
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center p-6 text-center">
-      <h2 className="text-xl font-bold tracking-tight">Erro crítico ao carregar o app</h2>
-      <p className="mt-2 text-sm text-muted-foreground max-w-md">
-        Ocorreu um erro inesperado que impediu a inicialização. 
-        Por favor, recarregue a página ou tente resetar o estado.
-      </p>
-      <pre className="mt-4 rounded bg-destructive/10 p-4 text-left font-mono text-xs text-destructive max-w-2xl overflow-auto w-full">
-        {error instanceof Error ? error.message : String(error)}
-      </pre>
-      <div className="mt-6 flex gap-4">
-        <button 
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium"
-        >
-          Recarregar Página
-        </button>
-        <button 
-          onClick={resetErrorBoundary}
-          className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm font-medium"
-        >
-          Tentar Novamente
-        </button>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#f8fafc',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      color: '#0f172a',
+      padding: 24
+    }}>
+      <div style={{
+        maxWidth: 520,
+        width: '100%',
+        background: 'white',
+        border: '1px solid #e2e8f0',
+        borderRadius: 16,
+        padding: 32,
+        boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)'
+      }}>
+        <h1 style={{ fontSize: 28, marginBottom: 12 }}>
+          App recuperado (via Root Route)
+        </h1>
+        <p style={{ fontSize: 16, lineHeight: 1.6, color: '#475569' }}>
+          O TanStack Router está renderizando a rota raiz. O próximo passo é reativar auth e Supabase um por um.
+        </p>
       </div>
     </div>
-  );
+  )
 }
 
 export const Route = createRootRoute({
-  component: () => (
-    <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <div className="min-h-screen bg-background font-sans antialiased">
-            <Outlet />
-            <Toaster />
-          </div>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
-  ),
+  component: EmergencyApp,
 });
