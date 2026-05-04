@@ -66,10 +66,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <div id="app-root">
       <AuthProvider>
         <Outlet />
       </AuthProvider>
-    </QueryClientProvider>
+    </div>
   );
 }
