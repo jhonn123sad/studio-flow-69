@@ -12,9 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReferencesRouteImport } from './routes/_authenticated/references'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
 import { Route as AuthenticatedFormatsRouteImport } from './routes/_authenticated/formats'
+import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -30,6 +33,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedReferencesRoute = AuthenticatedReferencesRouteImport.update({
   id: '/references',
   path: '/references',
@@ -40,48 +48,87 @@ const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   path: '/projects',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedFormatsRoute = AuthenticatedFormatsRouteImport.update({
   id: '/formats',
   path: '/formats',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedProjectsProjectIdRoute =
+  AuthenticatedProjectsProjectIdRouteImport.update({
+    id: '/$projectId',
+    path: '/$projectId',
+    getParentRoute: () => AuthenticatedProjectsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/formats': typeof AuthenticatedFormatsRoute
-  '/projects': typeof AuthenticatedProjectsRoute
+  '/library': typeof AuthenticatedLibraryRoute
+  '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/references': typeof AuthenticatedReferencesRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/formats': typeof AuthenticatedFormatsRoute
-  '/projects': typeof AuthenticatedProjectsRoute
+  '/library': typeof AuthenticatedLibraryRoute
+  '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/references': typeof AuthenticatedReferencesRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/': typeof AuthenticatedIndexRoute
+  '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/formats': typeof AuthenticatedFormatsRoute
-  '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/library': typeof AuthenticatedLibraryRoute
+  '/_authenticated/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/_authenticated/references': typeof AuthenticatedReferencesRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/formats' | '/projects' | '/references'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/formats'
+    | '/library'
+    | '/projects'
+    | '/references'
+    | '/settings'
+    | '/projects/$projectId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/formats' | '/projects' | '/references' | '/'
+  to:
+    | '/login'
+    | '/formats'
+    | '/library'
+    | '/projects'
+    | '/references'
+    | '/settings'
+    | '/'
+    | '/projects/$projectId'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
     | '/_authenticated/formats'
+    | '/_authenticated/library'
     | '/_authenticated/projects'
     | '/_authenticated/references'
+    | '/_authenticated/settings'
     | '/_authenticated/'
+    | '/_authenticated/projects/$projectId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -112,6 +159,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/references': {
       id: '/_authenticated/references'
       path: '/references'
@@ -126,6 +180,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/library': {
+      id: '/_authenticated/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof AuthenticatedLibraryRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/formats': {
       id: '/_authenticated/formats'
       path: '/formats'
@@ -133,20 +194,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFormatsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/projects/$projectId': {
+      id: '/_authenticated/projects/$projectId'
+      path: '/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdRouteImport
+      parentRoute: typeof AuthenticatedProjectsRoute
+    }
   }
 }
 
+interface AuthenticatedProjectsRouteChildren {
+  AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
+}
+
+const AuthenticatedProjectsRouteChildren: AuthenticatedProjectsRouteChildren = {
+  AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
+}
+
+const AuthenticatedProjectsRouteWithChildren =
+  AuthenticatedProjectsRoute._addFileChildren(
+    AuthenticatedProjectsRouteChildren,
+  )
+
 interface AuthenticatedRouteChildren {
   AuthenticatedFormatsRoute: typeof AuthenticatedFormatsRoute
-  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
+  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRouteWithChildren
   AuthenticatedReferencesRoute: typeof AuthenticatedReferencesRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFormatsRoute: AuthenticatedFormatsRoute,
-  AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
+  AuthenticatedProjectsRoute: AuthenticatedProjectsRouteWithChildren,
   AuthenticatedReferencesRoute: AuthenticatedReferencesRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
