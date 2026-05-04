@@ -124,7 +124,7 @@ function FormatsPage() {
               <div className="space-y-2">
                 <Label htmlFor="title">Título</Label>
                 <Input id="title" placeholder="Ex: Vídeo de Review" {...register("title")} />
-                {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
+                {errors.title && <p className="text-xs text-destructive">{(errors.title as any).message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Descrição</Label>

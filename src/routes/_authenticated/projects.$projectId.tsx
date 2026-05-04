@@ -16,7 +16,9 @@ import {
   Trash2,
   ExternalLink,
   ChevronRight,
-  GripVertical
+  GripVertical,
+  AlertCircle,
+  Edit2
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
