@@ -32,6 +32,7 @@ function ReferencesPage() {
 
   const { data: categoriesData } = useQuery({
     queryKey: ["reference-categories"],
+    enabled: false, // Desativado temporariamente para isolamento
     queryFn: async () => {
       try {
         const { data, error } = await supabase.from("reference_categories").select("*, references(count)");
@@ -49,7 +50,7 @@ function ReferencesPage() {
 
   const { data: topicsData } = useQuery({
     queryKey: ["reference-topics", selectedCategory],
-    enabled: !!selectedCategory,
+    enabled: false, // Desativado temporariamente para isolamento
     queryFn: async () => {
       try {
         const { data, error } = await supabase
