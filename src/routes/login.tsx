@@ -41,19 +41,20 @@ function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
-
-    if (error) {
-      toast.error("Erro ao entrar", {
-        description: error.message === "Invalid login credentials" ? "E-mail ou senha incorretos." : error.message
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
       });
-      setIsLoading(false);
-    } else {
+
+      if (error) throw error;
+      
       toast.success("Bem-vindo de volta!");
       navigate({ to: "/" });
+    } catch (error: any) {
+      handleError(error, "Login");
+    } finally {
+      setIsLoading(false);
     }
   };
 
