@@ -4,8 +4,6 @@ import {
   Search, 
   Plus, 
   MoreHorizontal, 
-  Link as LinkIcon, 
-  Image as ImageIcon,
   Grid,
   List,
   Filter,
@@ -52,24 +50,18 @@ export const Route = createFileRoute("/_authenticated/formats")({
 
 const formatSchema = z.object({
   title: z.string().min(2, "Título muito curto"),
-  description: z.string().default(""),
+  description: z.string().optional().default(""),
   status: z.string().default("Ativo"),
-  tags: z.string().default(""),
+  tags: z.string().optional().default(""),
 });
 
-type FormatFormValues = {
-  title: string;
-  description: string;
-  status: string;
-  tags: string;
-};
+type FormatFormValues = z.infer<typeof formatSchema>;
 
 function FormatsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  // MOCK DATA - PLACEHOLDER
   const [formats, setFormats] = useState([
     { id: "1", title: "Vídeo Curto (Reels/TikTok)", description: "Vídeos verticais de até 60 segundos com edição dinâmica.", status: "Ativo", tags: ["Vídeo", "Social"] },
     { id: "2", title: "Newsletter Semanal", description: "Informativo por e-mail com curadoria de conteúdos e novidades.", status: "Em Produção", tags: ["Escrita", "E-mail"] },
@@ -77,9 +69,9 @@ function FormatsPage() {
     { id: "4", title: "Podcast: Entrevistas", description: "Áudio longo gravado com convidados sobre temas técnicos.", status: "Arquivado", tags: ["Áudio", "Long-form"] },
   ]);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormatFormValues>({
+  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<FormatFormValues>({
     resolver: zodResolver(formatSchema),
-    defaultValues: { status: "Ativo" }
+    defaultValues: { status: "Ativo", description: "", tags: "" }
   });
 
   const filteredFormats = formats.filter(f => 
@@ -141,7 +133,7 @@ function FormatsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <Select defaultValue="Ativo">
+                  <Select defaultValue="Ativo" onValueChange={(v) => setValue("status", v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
@@ -199,9 +191,6 @@ function FormatsPage() {
                   <List className="h-4 w-4" />
                 </Button>
               </div>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Filter className="h-4 w-4" /> Filtros
-              </Button>
             </div>
           </div>
         </CardHeader>
@@ -265,16 +254,6 @@ function FormatsPage() {
                     >
                       {format.status}
                     </Badge>
-                    <div className="flex items-center gap-2">
-                      <div className="flex -space-x-2">
-                        {[1, 2, 3].map(i => (
-                          <div key={i} className="w-6 h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[8px] font-bold">
-                            {i}
-                          </div>
-                        ))}
-                      </div>
-                      <span className="text-[10px] text-muted-foreground font-medium">3 ref.</span>
-                    </div>
                   </CardFooter>
                 </Card>
               ))}
