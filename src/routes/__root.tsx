@@ -1,5 +1,4 @@
-import { Outlet, createRootRoute } from "@tanstack/react-router";
-import { HeadContent, Scripts } from "@tanstack/react-start";
+import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 import { SidebarProvider } from "@/components/ui/sidebar";
