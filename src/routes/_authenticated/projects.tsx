@@ -25,6 +25,8 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/projects")({
   component: ProjectsPage,
@@ -33,48 +35,37 @@ export const Route = createFileRoute("/_authenticated/projects")({
 function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
-  // MOCK DATA - PLACEHOLDER
-  const projects = [
-    { 
-      id: "1", 
-      title: "Lançamento Curso IA", 
-      description: "Planejamento e produção de conteúdo para o lançamento do curso de automação com IA.", 
-      status: "Em Produção", 
-      priority: "Alta", 
-      deadline: "15 Mai",
-      progress: 65,
-      tasksCount: 12,
-      pendingTasks: 4,
-      tags: ["Lançamento", "Curso", "IA"],
-      cover: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=800"
-    },
-    { 
-      id: "2", 
-      title: "Série YouTube: Productivity", 
-      description: "Série de 5 vídeos focada em ferramentas de produtividade para desenvolvedores.", 
-      status: "Ideias", 
-      priority: "Média", 
-      deadline: "22 Mai",
-      progress: 15,
-      tasksCount: 8,
-      pendingTasks: 7,
-      tags: ["YouTube", "Produtividade"],
-      cover: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&q=80&w=800"
-    },
-    { 
-      id: "3", 
-      title: "Rebranding Instagram", 
-      description: "Nova identidade visual e linha editorial para o perfil do Instagram.", 
-      status: "Concluído", 
-      priority: "Baixa", 
-      deadline: "01 Mai",
-      progress: 100,
-      tasksCount: 15,
-      pendingTasks: 0,
-      tags: ["Design", "Social"],
-      cover: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80&w=800"
-    },
-  ];
+  const { data: projectsData, isLoading } = useQuery({
+    queryKey: ["projects"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .order("created_at", { ascending: false });
+      
+      if (error) {
+        if (error.code === 'PGRST116' || error.message.includes('relation "projects" does not exist')) {
+          return [];
+        }
+        throw error;
+      }
+      return data || [];
+    }
+  });
+
+  const projects = projectsData?.map(p => ({
+    id: p.id,
+    title: p.title,
+    description: p.description,
+    status: p.status,
+    priority: p.priority,
+    deadline: p.deadline ? new Date(p.deadline).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : "S/D",
+    progress: p.progress || 0,
+    tasksCount: 0,
+    pendingTasks: 0,
+    tags: p.tags || [],
+    cover: p.cover_url || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800"
+  })) || [];
 
   const filteredProjects = projects.filter(p => 
     p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

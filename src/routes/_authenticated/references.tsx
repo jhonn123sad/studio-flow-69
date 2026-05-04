@@ -1,24 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { 
-  Bookmark, 
-  Search, 
-  Plus, 
-  ChevronRight, 
-  MoreVertical,
-  ArrowLeft,
-  Youtube,
-  Instagram,
-  Zap,
-  Cpu,
-  Trash2,
-  Edit2
-} from "lucide-react";
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+...
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/references")({
   component: ReferencesPage,
