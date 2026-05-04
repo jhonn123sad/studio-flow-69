@@ -170,7 +170,7 @@ function ProjectsPage() {
               </div>
 
               <div className="flex flex-wrap gap-1.5">
-                {project.tags.map(tag => (
+                {project.tags.map((tag: string) => (
                   <Badge key={tag} variant="secondary" className="bg-muted/50 text-[10px] py-0 px-2 h-5 font-medium">
                     {tag}
                   </Badge>

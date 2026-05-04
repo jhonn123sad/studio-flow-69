@@ -121,7 +121,7 @@ function ReferencesPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-wrap gap-2">
-                  {topic.tags.map(tag => (
+                  {topic.tags.map((tag: string) => (
                     <Badge key={tag} variant="secondary" className="text-[10px] font-medium bg-muted/50">
                       {tag}
                     </Badge>
