@@ -101,32 +101,57 @@ function FormatsPage() {
     f.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const onSubmit = (data: FormatFormValues) => {
-    try {
-      const newFormat = {
-        id: Math.random().toString(36).substr(2, 9),
-        title: data.title,
-        description: data.description || "",
-        status: data.status,
-        tags: data.tags ? data.tags.split(",").map(t => t.trim()) : [],
-      };
-      
-      setFormats([newFormat, ...formats]);
+  const queryClient = useQueryClient();
+
+  const createMutation = useMutation({
+    mutationFn: async (newFormat: any) => {
+      const { data, error } = await supabase
+        .from("formats")
+        .insert([newFormat])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["formats"] });
       setIsCreateDialogOpen(false);
       reset();
       toast.success("Formato criado com sucesso!");
-    } catch (error) {
+    },
+    onError: (error) => {
       handleError(error, "Create Format");
     }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("formats")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["formats"] });
+      toast.success("Formato removido.");
+    },
+    onError: (error) => {
+      handleError(error, "Delete Format");
+    }
+  });
+
+  const onSubmit = (data: FormatFormValues) => {
+    createMutation.mutate({
+      title: data.title,
+      description: data.description || "",
+      status: data.status,
+      tags: data.tags ? data.tags.split(",").map((t: string) => t.trim()) : [],
+    });
   };
 
   const deleteFormat = (id: string) => {
-    try {
-      setFormats(formats.filter(f => f.id !== id));
-      toast.success("Formato removido.");
-    } catch (error) {
-      handleError(error, "Delete Format");
-    }
+    deleteMutation.mutate(id);
   };
 
   return (
