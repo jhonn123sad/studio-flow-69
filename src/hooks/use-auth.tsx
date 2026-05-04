@@ -18,24 +18,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession()
-      .then(({ data: { session }, error }) => {
+    let mounted = true;
+
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
+        
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+      } catch (err) {
+        // Não usamos handleError aqui para evitar toast de erro na tela de login/inicialização
+        console.error("Auth Session Error:", err);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) {
         setSession(session);
         setUser(session?.user ?? null);
-      })
-      .catch(err => handleError(err, "Auth Session"))
-      .finally(() => setIsLoading(false));
-
-    // Listen for changes on auth state (logged in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
+        setIsLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
