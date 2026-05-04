@@ -24,7 +24,7 @@ function DashboardPage() {
   const { user } = useAuth();
   const { data: statsData, isLoading: isLoadingStats } = useQuery({
     queryKey: ["dashboard-stats"],
-    enabled: !!user?.id,
+    enabled: false, // Desativado temporariamente para isolamento
     queryFn: async () => {
       try {
         const [formatsRes, refsRes, projectsRes] = await Promise.all([
@@ -47,7 +47,7 @@ function DashboardPage() {
 
   const { data: recentProjectsData } = useQuery({
     queryKey: ["recent-projects"],
-    enabled: !!user?.id,
+    enabled: false, // Desativado temporariamente para isolamento
     queryFn: async () => {
       try {
         const { data, error } = await supabase

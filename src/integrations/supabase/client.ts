@@ -10,7 +10,10 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
                     import.meta.env.VITE_SUPABASE_ANON_KEY || 
                     fallbackSupabaseKey;
 
-// Flag para verificar se as configurações básicas existem (sempre true agora devido ao fallback)
+// Flag para verificar se estamos no browser
+const isBrowser = typeof window !== 'undefined';
+
+// Flag para verificar se as configurações básicas existem
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseKey);
 
 // Cria o cliente único oficial do projeto
@@ -18,7 +21,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storage: window.localStorage,
+    detectSessionInUrl: isBrowser,
+    storage: isBrowser ? window.localStorage : undefined,
   },
 });

@@ -22,6 +22,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const checkSession = async () => {
       try {
+        // Garantir que não rodamos no servidor
+        if (typeof window === 'undefined') return;
+
         const { data, error } = await supabase.auth.getSession();
         if (error) {
           console.error("Auth Session Error:", error.message);
