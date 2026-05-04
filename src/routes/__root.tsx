@@ -54,11 +54,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
       <head>
-        <HeadContent />
+        {/* <HeadContent /> */}
       </head>
       <body>
         {children}
-        <Scripts />
+        {/* <Scripts /> */}
       </body>
     </html>
   );
