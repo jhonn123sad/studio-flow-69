@@ -32,7 +32,7 @@ function LoginPage() {
   const navigate = Route.useNavigate();
 
   if (user) {
-    navigate({ to: "/" });
+    navigate({ to: "/", replace: true });
   }
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({

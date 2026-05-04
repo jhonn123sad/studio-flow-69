@@ -22,16 +22,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const checkSession = async () => {
       try {
+        // Verifica se o supabase está configurado antes de tentar getSession
+        const isConfigured = !!(import.meta.env.VITE_SUPABASE_URL && (import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY));
+        
+        if (!isConfigured) {
+          if (mounted) setIsLoading(false);
+          return;
+        }
+
         const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
+        if (error) {
+          console.error("Auth Session Error:", error.message);
+          if (mounted) setIsLoading(false);
+          return;
+        }
         
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
         }
       } catch (err) {
-        // Não usamos handleError aqui para evitar toast de erro na tela de login/inicialização
-        console.error("Auth Session Error:", err);
+        console.error("Critical Auth Error:", err);
       } finally {
         if (mounted) setIsLoading(false);
       }

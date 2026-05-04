@@ -36,13 +36,16 @@ function AuthenticatedLayout() {
   const navigate = Route.useNavigate();
 
   // Verifica se o Supabase está configurado (variáveis de ambiente presentes)
-  const isSupabaseConfigured = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
+  const isSupabaseConfigured = !!(
+    import.meta.env.VITE_SUPABASE_URL && 
+    (import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY)
+  );
 
   useEffect(() => {
     // Só redireciona se o Supabase estiver configurado. 
     // Se não estiver, permitimos o acesso ao dashboard (que mostrará dados mockados/vazios) para evitar o loop de erro.
     if (!isLoading && !user && isSupabaseConfigured) {
-      navigate({ to: "/login" });
+      navigate({ to: "/login", replace: true });
     }
   }, [user, isLoading, navigate, isSupabaseConfigured]);
 
