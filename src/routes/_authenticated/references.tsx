@@ -1,5 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-...
+import { 
+  Bookmark, 
+  Search, 
+  Plus, 
+  ChevronRight, 
+  MoreVertical,
+  ArrowLeft,
+  Youtube,
+  Instagram,
+  Zap,
+  Cpu,
+  Trash2,
+  Edit2
+} from "lucide-react";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -13,20 +30,42 @@ function ReferencesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // MOCK DATA - PLACEHOLDER
-  const categories = [
-    { id: "1", title: "YouTube", icon: Youtube, color: "text-red-500", count: 12 },
-    { id: "2", title: "Instagram", icon: Instagram, color: "text-pink-500", count: 8 },
-    { id: "3", title: "Tráfego Pago", icon: Zap, color: "text-amber-500", count: 15 },
-    { id: "4", title: "IA & Ferramentas", icon: Cpu, color: "text-blue-500", count: 20 },
-  ];
+  const { data: categoriesData } = useQuery({
+    queryKey: ["reference-categories"],
+    queryFn: async () => {
+      const { data } = await supabase.from("reference_categories").select("*, references(count)");
+      return data || [];
+    }
+  });
 
-  const topics = [
-    { id: "1", categoryId: "1", title: "Edição estilo MrBeast", description: "Cortes rápidos, zooms e retenção.", status: "Estudando", tags: ["Edição", "Retenção"] },
-    { id: "2", categoryId: "1", title: "Thumbnails Clickbait", description: "Contraste alto e rostos expressivos.", status: "Aplicando", tags: ["Design", "CTR"] },
-    { id: "3", categoryId: "4", title: "Automação com Make.com", description: "Como conectar Supabase e ChatGPT.", status: "Estudando", tags: ["No-code", "IA"] },
-    { id: "4", categoryId: "2", title: "Reels Viral Hooks", description: "As primeiras 3 frases para prender atenção.", status: "Estudando", tags: ["Social", "Copy"] },
-  ];
+  const { data: topicsData } = useQuery({
+    queryKey: ["reference-topics", selectedCategory],
+    enabled: !!selectedCategory,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("references")
+        .select("*")
+        .eq("category_id", selectedCategory);
+      return data || [];
+    }
+  });
+
+  const categories = categoriesData?.map(c => ({
+    id: c.id,
+    title: c.name,
+    icon: c.icon === 'Youtube' ? Youtube : c.icon === 'Instagram' ? Instagram : c.icon === 'Zap' ? Zap : Cpu,
+    color: c.color || "text-blue-500",
+    count: c.references?.[0]?.count || 0
+  })) || [];
+
+  const topics = topicsData?.map(t => ({
+    id: t.id,
+    categoryId: t.category_id,
+    title: t.title,
+    description: t.description,
+    status: t.status,
+    tags: t.tags || []
+  })) || [];
 
   const filteredCategories = categories.filter(c => 
     c.title.toLowerCase().includes(searchTerm.toLowerCase())
