@@ -66,6 +66,7 @@ function FormatsPage() {
 
   const { data: formatsData } = useQuery({
     queryKey: ["formats"],
+    enabled: false, // Desativado temporariamente para isolamento
     queryFn: async () => {
       try {
         const { data, error } = await supabase
