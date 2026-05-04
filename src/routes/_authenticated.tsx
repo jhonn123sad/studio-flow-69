@@ -32,41 +32,5 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
-  const { user, isLoading } = useAuth();
-  const navigate = Route.useNavigate();
-
-  useEffect(() => {
-    // Redireciona para login se não houver usuário após o carregamento
-    if (!isLoading && !user) {
-      navigate({ to: "/login", replace: true });
-    }
-  }, [user, isLoading, navigate]);
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground animate-pulse">Carregando...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Se não estiver logado, não renderizamos nada (o useEffect redirecionará)
-  if (!user) return null;
-
-  return (
-    <div className="flex min-h-screen w-full bg-background">
-      <AppSidebar />
-      <div className="flex-1 flex flex-col min-w-0">
-        <Topbar />
-        <main className="flex-1 p-6 md:p-8">
-          <div className="max-w-7xl mx-auto w-full space-y-8 animate-in fade-in duration-500">
-            <Outlet />
-          </div>
-        </main>
-      </div>
-    </div>
-  );
+  return <Outlet />;
 }
