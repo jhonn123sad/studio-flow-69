@@ -172,19 +172,25 @@ function ProjectDetailPage() {
           <OverviewTab project={project} />
         </TabsContent>
         <TabsContent value="notes">
-          <NotesTab />
+          <div className="p-8 text-center bg-muted/20 rounded-xl border border-dashed">
+            <p className="text-muted-foreground italic">Editor de notas temporariamente desativado para estabilidade.</p>
+          </div>
         </TabsContent>
         <TabsContent value="links">
           <LinksTab />
         </TabsContent>
         <TabsContent value="images">
-          <ImagesTab />
+          <div className="p-8 text-center bg-muted/20 rounded-xl border border-dashed">
+            <p className="text-muted-foreground italic">Upload de imagens temporariamente desativado para estabilidade.</p>
+          </div>
         </TabsContent>
         <TabsContent value="tasks">
           <TasksTab />
         </TabsContent>
         <TabsContent value="kanban">
-          <KanbanTab />
+          <div className="p-8 text-center bg-muted/20 rounded-xl border border-dashed">
+            <p className="text-muted-foreground italic">Kanban drag-and-drop temporariamente desativado para estabilidade.</p>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
