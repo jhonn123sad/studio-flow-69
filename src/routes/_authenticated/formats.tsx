@@ -57,7 +57,12 @@ const formatSchema = z.object({
   tags: z.string().default(""),
 });
 
-type FormatFormValues = z.infer<typeof formatSchema>;
+type FormatFormValues = {
+  title: string;
+  description: string;
+  status: string;
+  tags: string;
+};
 
 function FormatsPage() {
   const [searchTerm, setSearchTerm] = useState("");

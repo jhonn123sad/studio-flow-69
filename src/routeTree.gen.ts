@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedReferencesRouteImport } from './routes/_authenticated/references'
+import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedFormatsRouteImport } from './routes/_authenticated/formats'
 
 const LoginRoute = LoginRouteImport.update({
@@ -28,6 +30,16 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedReferencesRoute = AuthenticatedReferencesRouteImport.update({
+  id: '/references',
+  path: '/references',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedFormatsRoute = AuthenticatedFormatsRouteImport.update({
   id: '/formats',
   path: '/formats',
@@ -38,10 +50,14 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/formats': typeof AuthenticatedFormatsRoute
+  '/projects': typeof AuthenticatedProjectsRoute
+  '/references': typeof AuthenticatedReferencesRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/formats': typeof AuthenticatedFormatsRoute
+  '/projects': typeof AuthenticatedProjectsRoute
+  '/references': typeof AuthenticatedReferencesRoute
   '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
@@ -49,18 +65,22 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/formats': typeof AuthenticatedFormatsRoute
+  '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/references': typeof AuthenticatedReferencesRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/formats'
+  fullPaths: '/' | '/login' | '/formats' | '/projects' | '/references'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/formats' | '/'
+  to: '/login' | '/formats' | '/projects' | '/references' | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
     | '/_authenticated/formats'
+    | '/_authenticated/projects'
+    | '/_authenticated/references'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
@@ -92,6 +112,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/references': {
+      id: '/_authenticated/references'
+      path: '/references'
+      fullPath: '/references'
+      preLoaderRoute: typeof AuthenticatedReferencesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects': {
+      id: '/_authenticated/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/formats': {
       id: '/_authenticated/formats'
       path: '/formats'
@@ -104,11 +138,15 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedFormatsRoute: typeof AuthenticatedFormatsRoute
+  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedReferencesRoute: typeof AuthenticatedReferencesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFormatsRoute: AuthenticatedFormatsRoute,
+  AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedReferencesRoute: AuthenticatedReferencesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
