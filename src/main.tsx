@@ -1,1 +1,1 @@
-// Arquivo desativado para teste nuclear de HTML puro.
+console.log('[MAIN] No-op entry point');
