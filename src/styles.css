@@ -137,8 +137,15 @@
     border-color: var(--color-border);
   }
 
+  html, body, #root {
+    min-height: 100%;
+    pointer-events: auto !important;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    margin: 0;
+    padding: 0;
   }
 }
