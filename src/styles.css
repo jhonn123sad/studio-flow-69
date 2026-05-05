@@ -2,16 +2,25 @@ html,
 body,
 #root {
   width: 100%;
-  min-height: 100%;
+  height: 100%;
   margin: 0;
+  padding: 0;
   pointer-events: auto !important;
+  background-color: #ffffff;
 }
 
 * {
+  box-sizing: border-box;
   pointer-events: auto;
 }
 
 button {
   pointer-events: auto !important;
   cursor: pointer !important;
+}
+
+/* Remover qualquer overlay global que possa estar vindo de libs */
+.overlay, .modal-backdrop, .command-menu-overlay {
+  display: none !important;
+  pointer-events: none !important;
 }
