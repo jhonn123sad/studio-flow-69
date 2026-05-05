@@ -7,7 +7,8 @@ import {
   Grid,
   List,
   Trash2,
-  Edit2
+  Edit2,
+  AlertCircle
 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -42,7 +43,6 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { handleError } from "@/lib/error-handler";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -63,27 +63,22 @@ function FormatsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingFormat, setEditingFormat] = useState<any>(null);
 
-  const { data: formatsData } = useQuery({
+  const queryClient = useQueryClient();
+
+  const { data: formatsData, error: queryError, isLoading } = useQuery({
     queryKey: ["formats"],
-    enabled: false, // Desativado temporariamente para isolamento
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from("formats")
-          .select("*")
-          .order("created_at", { ascending: false });
-        
-        if (error) {
-          console.error("Formats Fetch Error:", error.message);
-          return [];
-        }
-        return data || [];
-      } catch (err) {
-        console.error("Formats Critical Error:", err);
-        return [];
-      }
-    }
+      const { data, error } = await supabase
+        .from("formats")
+        .select("*")
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    retry: false
   });
 
   const formats = formatsData?.map((f: any) => ({
@@ -91,20 +86,18 @@ function FormatsPage() {
     title: f.title,
     description: f.description,
     status: f.status,
-    tags: f.tags || []
+    tags: Array.isArray(f.tags) ? f.tags : []
   })) || [];
 
-  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<any>({
+  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<FormatFormValues>({
     resolver: zodResolver(formatSchema),
     defaultValues: { status: "Ativo", description: "", tags: "" }
   });
 
   const filteredFormats = formats.filter((f: any) => 
     f.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    f.description.toLowerCase().includes(searchTerm.toLowerCase())
+    (f.description && f.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  const queryClient = useQueryClient();
 
   const createMutation = useMutation({
     mutationFn: async (newFormat: any) => {
@@ -122,8 +115,28 @@ function FormatsPage() {
       reset();
       toast.success("Formato criado com sucesso!");
     },
-    onError: (error) => {
-      handleError(error, "Create Format");
+    onError: (error: any) => {
+      toast.error("Erro ao criar formato: " + error.message);
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string, data: any }) => {
+      const { error } = await supabase
+        .from("formats")
+        .update(data)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["formats"] });
+      setIsCreateDialogOpen(false);
+      setEditingFormat(null);
+      reset();
+      toast.success("Formato atualizado!");
+    },
+    onError: (error: any) => {
+      toast.error("Erro ao atualizar: " + error.message);
     }
   });
 
@@ -139,33 +152,70 @@ function FormatsPage() {
       queryClient.invalidateQueries({ queryKey: ["formats"] });
       toast.success("Formato removido.");
     },
-    onError: (error) => {
-      handleError(error, "Delete Format");
+    onError: (error: any) => {
+      toast.error("Erro ao remover: " + error.message);
     }
   });
 
   const onSubmit = (data: FormatFormValues) => {
-    createMutation.mutate({
+    const payload = {
       title: data.title,
       description: data.description || "",
       status: data.status,
       tags: data.tags ? data.tags.split(",").map((t: string) => t.trim()) : [],
-    });
+    };
+
+    if (editingFormat) {
+      updateMutation.mutate({ id: editingFormat.id, data: payload });
+    } else {
+      createMutation.mutate(payload);
+    }
   };
 
-  const deleteFormat = (id: string) => {
-    deleteMutation.mutate(id);
+  const startEdit = (format: any) => {
+    setEditingFormat(format);
+    setValue("title", format.title);
+    setValue("description", format.description || "");
+    setValue("status", format.status);
+    setValue("tags", format.tags.join(", "));
+    setIsCreateDialogOpen(true);
   };
+
+  const handleOpenChange = (open: boolean) => {
+    setIsCreateDialogOpen(open);
+    if (!open) {
+      setEditingFormat(null);
+      reset();
+    }
+  };
+
+  if (queryError) {
+    const isRLSError = (queryError as any).message?.includes("row-level security") || (queryError as any).code === "42501";
+    const isTableMissing = (queryError as any).message?.includes("does not exist") || (queryError as any).code === "42P01";
+
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <h2 className="text-xl font-bold">Ocorreu um erro no banco de dados</h2>
+        <p className="text-muted-foreground max-w-md">
+          {isRLSError ? "Permissão negada. Verifique as políticas de RLS no Supabase para permitir acesso sem autenticação." : 
+           isTableMissing ? "A tabela 'formats' não foi encontrada no Supabase." : 
+           (queryError as any).message}
+        </p>
+        <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["formats"] })}>Tentar Novamente</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Formatos de Conteúdo</h1>
-          <p className="text-muted-foreground">Gerencie os diferentes tipos de conteúdo que você produz.</p>
+          <p className="text-muted-foreground">Gerencie os tipos de conteúdo do seu painel pessoal.</p>
         </div>
         
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" /> Novo Formato
@@ -173,7 +223,7 @@ function FormatsPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Criar Novo Formato</DialogTitle>
+              <DialogTitle>{editingFormat ? "Editar Formato" : "Criar Novo Formato"}</DialogTitle>
               <DialogDescription>
                 Defina um novo padrão de conteúdo para sua produção.
               </DialogDescription>
@@ -182,11 +232,11 @@ function FormatsPage() {
               <div className="space-y-2">
                 <Label htmlFor="title">Título</Label>
                 <Input id="title" placeholder="Ex: Vídeo de Review" {...register("title")} />
-                {errors.title && <p className="text-xs text-destructive">{(errors.title as any).message}</p>}
+                {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Descrição</Label>
-                <Textarea id="description" placeholder="Descreva brevemente como funciona este formato..." {...register("description")} />
+                <Textarea id="description" placeholder="Descreva brevemente este formato..." {...register("description")} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -203,13 +253,15 @@ function FormatsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
+                  <Label htmlFor="tags">Tags (vírgula)</Label>
                   <Input id="tags" placeholder="Vídeo, Social..." {...register("tags")} />
                 </div>
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancelar</Button>
-                <Button type="submit">Salvar Formato</Button>
+                <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>Cancelar</Button>
+                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                  {editingFormat ? "Atualizar" : "Salvar"}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -253,14 +305,16 @@ function FormatsPage() {
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          {filteredFormats.length === 0 ? (
+          {isLoading ? (
+            <div className="py-20 text-center">Carregando formatos...</div>
+          ) : filteredFormats.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                 <Video className="h-8 w-8" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold">Nenhum formato encontrado</h3>
-                <p className="text-muted-foreground max-w-xs mx-auto">Tente ajustar sua busca ou crie um novo formato para começar.</p>
+                <p className="text-muted-foreground max-w-xs mx-auto">Crie seu primeiro formato para começar a organizar sua produção.</p>
               </div>
               <Button variant="outline" onClick={() => setSearchTerm("")}>Limpar Busca</Button>
             </div>
@@ -279,10 +333,10 @@ function FormatsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="gap-2">
+                        <DropdownMenuItem className="gap-2" onClick={() => startEdit(format)}>
                           <Edit2 className="h-4 w-4" /> Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive" onClick={() => deleteFormat(format.id)}>
+                        <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive" onClick={() => deleteMutation.mutate(format.id)}>
                           <Trash2 className="h-4 w-4" /> Excluir
                         </DropdownMenuItem>
                       </DropdownMenuContent>
