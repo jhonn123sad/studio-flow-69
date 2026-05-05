@@ -1,102 +1,12 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Apaguei</title>
-    <style>
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        min-height: 100%;
-        background: #f8fafc;
-        font-family: Arial, sans-serif;
-        color: #0f172a;
-      }
-
-      body {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 40px;
-        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
-        text-align: center;
-        max-width: 480px;
-        width: calc(100% - 48px);
-      }
-
-      h1 {
-        margin: 0 0 16px;
-        font-size: 42px;
-      }
-
-      p {
-        margin: 0 0 24px;
-        font-size: 18px;
-        color: #475569;
-      }
-
-      button {
-        appearance: auto;
-        border: 0;
-        border-radius: 10px;
-        background: #2563eb;
-        color: white;
-        padding: 14px 22px;
-        font-size: 16px;
-        font-weight: 700;
-        cursor: pointer;
-      }
-
-      #status {
-        margin-top: 20px;
-        font-size: 16px;
-        color: #16a34a;
-        font-weight: 700;
-      }
-    </style>
   </head>
-
   <body>
-    <div class="card">
-      <h1>apaguei</h1>
-      <p>HTML puro funcionando.</p>
-
-      <button id="btn" type="button">
-        Clique aqui
-      </button>
-
-      <div id="status">Cliques: 0</div>
-      <div id="root"></div>
-    </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-
-    <script>
-      let count = 0;
-
-      console.log('[HTML PURO] página carregou');
-
-      const btn = document.getElementById('btn');
-      const status = document.getElementById('status');
-
-      btn.addEventListener('click', function () {
-        count++;
-        console.log('[HTML PURO] botão clicado', count);
-        status.textContent = 'Cliques: ' + count;
-      });
-
-      window.addEventListener('click', function (event) {
-        console.log('[HTML PURO] window click', event.target);
-      });
-    </script>
   </body>
 </html>
