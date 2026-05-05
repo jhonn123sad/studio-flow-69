@@ -9,61 +9,32 @@ function ClickTest() {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    console.log('[CLICK TEST] componente montou');
+    console.log('[CLICK TEST] componente montou index');
   }, []);
 
   return (
     <div 
-      id="click-test-container"
       style={{ 
-        minHeight: '100vh', 
-        width: '100%',
+        height: '100vh', 
+        width: '100vw',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        position: 'relative',
-        zIndex: 999999,
-        pointerEvents: 'auto',
-        backgroundColor: '#ffffff'
+        backgroundColor: 'yellow', // Cor gritante para confirmar render
+        pointerEvents: 'auto'
       }}
     >
-      <h1 style={{ fontSize: '32px', marginBottom: '20px', color: '#1e293b' }}>
-        Teste de Clique
-      </h1>
-      
-      <p style={{ fontSize: '20px', marginBottom: '30px', color: '#64748b' }}>
-        Cliques: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{count}</span>
-      </p>
-
+      <h1>CONTADOR: {count}</h1>
       <button
-        type="button"
-        id="test-button"
         onClick={() => {
-          console.log('[CLICK TEST] botão clicado');
-          setCount((v) => v + 1);
+          console.log('[CLICK TEST] CLIQUE NO BOTAO');
+          setCount(c => c + 1);
         }}
-        style={{
-          padding: '20px 40px',
-          fontSize: '18px',
-          fontWeight: 'bold',
-          color: 'white',
-          backgroundColor: '#3b82f6',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          position: 'relative',
-          zIndex: 999999,
-          pointerEvents: 'auto',
-          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-        }}
+        style={{ padding: '20px', fontSize: '20px', cursor: 'pointer' }}
       >
-        Clique aqui
+        CLIQUE AQUI
       </button>
-
-      <div style={{ marginTop: '40px', fontSize: '14px', color: '#94a3b8' }}>
-        Se o contador não aumentar, existe algo bloqueando o clique.
-      </div>
     </div>
   );
 }
