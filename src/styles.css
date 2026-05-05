@@ -1,38 +1,17 @@
-@import "tailwindcss" source(none);
-@source "../src";
-@import "tw-animate-css";
-
 html,
 body,
 #root {
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
   pointer-events: auto !important;
-  overflow: auto !important;
 }
 
 * {
-  pointer-events: auto !important;
+  pointer-events: auto;
 }
 
 button {
   pointer-events: auto !important;
   cursor: pointer !important;
-}
-
-/* Remover overlays agressivos */
-[data-radix-popper-content-wrapper],
-[role="dialog"],
-.fixed,
-.absolute {
-    pointer-events: none;
-}
-
-#click-test-bypass-root,
-#click-test-bypass-root *,
-#click-test-button {
-    pointer-events: auto !important;
 }
