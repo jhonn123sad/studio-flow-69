@@ -1,16 +1,20 @@
 import { Outlet, createRootRoute } from "@tanstack/react-router";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import { Topbar } from "@/components/layout/topbar";
 
 export const Route = createRootRoute({
   component: () => (
-    <div style={{ fontFamily: 'sans-serif' }}>
-      <div style={{ background: '#333', color: '#fff', padding: '10px 20px', display: 'flex', gap: '20px' }}>
-        <strong>Root Shell</strong>
-        <a href="/login" style={{ color: '#fff' }}>Login</a>
-        <a href="/" style={{ color: '#fff' }}>Dashboard</a>
+    <SidebarProvider>
+      <div className="flex w-full min-h-svh bg-background">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col">
+          <Topbar />
+          <main className="flex-1 p-6">
+            <Outlet />
+          </main>
+        </div>
       </div>
-      <div style={{ padding: '20px' }}>
-        <Outlet />
-      </div>
-    </div>
+    </SidebarProvider>
   ),
 });
