@@ -1,41 +1,51 @@
-import { Outlet, createRootRoute } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createRootRoute } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 
 export const Route = createRootRoute({
-  component: () => {
-    useEffect(() => {
-      console.log('[CLICK TEST] componente raiz montou');
-      
-      const fixPointerEvents = () => {
-        document.documentElement.style.pointerEvents = 'auto';
-        document.body.style.pointerEvents = 'auto';
-        const root = document.getElementById('root');
-        if (root) {
-          root.style.pointerEvents = 'auto';
-          root.style.minHeight = '100vh';
-        }
-      };
-
-      fixPointerEvents();
-      // Reforçar periodicamente caso algum script injetado mude
-      const interval = setInterval(fixPointerEvents, 1000);
-      return () => clearInterval(interval);
-    }, []);
-
-    return (
-      <div id="root-container" style={{ 
-        margin: 0, 
-        padding: 0, 
-        minHeight: '100vh', 
-        width: '100%',
-        backgroundColor: '#f8fafc', 
-        fontFamily: 'sans-serif',
-        position: 'relative',
-        zIndex: 1,
-        pointerEvents: 'auto'
-      }}>
-        <Outlet />
-      </div>
-    );
-  },
+  component: () => <RootTest />,
 });
+
+function RootTest() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    console.log('[CLICK TEST] ROOT FINAL MONTADO');
+  }, []);
+
+  return (
+    <div 
+      style={{ 
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999999,
+        backgroundColor: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'auto'
+      }}
+    >
+      <h1 style={{ fontSize: '4rem' }}>BYPASS FINAL</h1>
+      <p style={{ fontSize: '2rem' }}>Cliques: {count}</p>
+      <button
+        onClick={() => {
+          console.log('[CLICK TEST] CLIQUE FINAL OK');
+          setCount(c => c + 1);
+        }}
+        style={{
+          padding: '2rem 4rem',
+          fontSize: '2rem',
+          backgroundColor: 'red',
+          color: 'white',
+          border: 'none',
+          borderRadius: '1rem',
+          cursor: 'pointer',
+          pointerEvents: 'auto'
+        }}
+      >
+        CLIQUE AQUI
+      </button>
+    </div>
+  );
+}
