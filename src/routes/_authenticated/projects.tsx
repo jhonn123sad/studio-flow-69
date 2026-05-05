@@ -57,7 +57,7 @@ function ProjectsPage() {
     }
   });
 
-  const projects = projectsData?.map(p => ({
+  const projects = projectsData?.map((p: any) => ({
     id: p.id,
     title: p.title,
     description: p.description,
@@ -71,7 +71,7 @@ function ProjectsPage() {
     cover: p.cover_url || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800"
   })) || [];
 
-  const filteredProjects = projects.filter(p => 
+  const filteredProjects = projects.filter((p: any) => 
     p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -110,7 +110,7 @@ function ProjectsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredProjects.map((project) => (
+        {filteredProjects.map((project: any) => (
           <Card key={project.id} className="group hover:border-primary/40 transition-all shadow-md overflow-hidden flex flex-col border-border/40">
             <Link 
               to="/projects/$projectId" 

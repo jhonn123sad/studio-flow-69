@@ -69,7 +69,7 @@ function ReferencesPage() {
     }
   });
 
-  const categories = categoriesData?.map(c => ({
+  const categories = categoriesData?.map((c: any) => ({
     id: c.id,
     title: c.name,
     icon: c.icon === 'Youtube' ? Youtube : c.icon === 'Instagram' ? Instagram : c.icon === 'Zap' ? Zap : Cpu,
@@ -77,7 +77,7 @@ function ReferencesPage() {
     count: c.references?.[0]?.count || 0
   })) || [];
 
-  const topics = topicsData?.map(t => ({
+  const topics = topicsData?.map((t: any) => ({
     id: t.id,
     categoryId: t.category_id,
     title: t.title,
@@ -86,18 +86,18 @@ function ReferencesPage() {
     tags: t.tags || []
   })) || [];
 
-  const filteredCategories = categories.filter(c => 
+  const filteredCategories = categories.filter((c: any) => 
     c.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredTopics = topics.filter(t => 
+  const filteredTopics = topics.filter((t: any) => 
     t.categoryId === selectedCategory &&
     (t.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
      t.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   if (selectedCategory) {
-    const category = categories.find(c => c.id === selectedCategory);
+    const category = categories.find((c: any) => c.id === selectedCategory);
     return (
       <div className="space-y-8 pb-10">
         <div className="flex items-center gap-4">
@@ -127,7 +127,7 @@ function ReferencesPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTopics.map((topic) => (
+          {filteredTopics.map((topic: any) => (
             <Card key={topic.id} className="hover:border-primary/40 transition-all shadow-sm group">
               <CardHeader className="flex flex-row items-start justify-between pb-2">
                 <div className="space-y-1">
@@ -189,7 +189,7 @@ function ReferencesPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {filteredCategories.map((category) => (
+        {filteredCategories.map((category: any) => (
           <Card 
             key={category.id} 
             className="group hover:border-primary/40 transition-all shadow-md cursor-pointer overflow-hidden border-border/40"
