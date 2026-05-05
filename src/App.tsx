@@ -39,44 +39,54 @@ interface AppImage {
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
-  const [clicks, setClicks] = useState(0);
   const [supabaseStatus, setSupabaseStatus] = useState('Pronto para testar.');
+  
+  // Stats
+  const [stats, setStats] = useState({
+    formats: 0,
+    references: 0,
+    projects: 0,
+    links: 0,
+    images: 0,
+    notes: 0,
+    tasks: 0
+  });
 
-  // Formatos State
+  // Main lists
   const [formats, setFormats] = useState<ContentFormat[]>([]);
-  const [loadingFormats, setLoadingFormats] = useState(false);
-  const [formatStatus, setFormatStatus] = useState('');
+  const [references, setReferences] = useState<ReferenceCategory[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  
+  // Loading states
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState('');
+  
+  // Search
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Form states
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [editingFormatId, setEditingFormatId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Referências State
-  const [references, setReferences] = useState<ReferenceCategory[]>([]);
-  const [loadingReferences, setLoadingReferences] = useState(false);
-  const [referenceStatus, setReferenceStatus] = useState('');
   const [refName, setRefName] = useState('');
   const [refDescription, setRefDescription] = useState('');
   const [refColor, setRefColor] = useState('');
-  const [editingRefId, setEditingRefId] = useState<string | null>(null);
-  const [isSubmittingRef, setIsSubmittingRef] = useState(false);
-
-  // Projetos State
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
-  const [projectStatus, setProjectStatus] = useState('');
   const [projectTitle, setProjectTitle] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
   const [projectProjStatus, setProjectProjStatus] = useState('planning');
   const [projectPriority, setProjectPriority] = useState('medium');
-  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
-  const [isSubmittingProj, setIsSubmittingProj] = useState(false);
+  
+  // UI states
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<{
     type: 'format' | 'reference' | 'project';
     id: string;
     title: string;
     description: string;
   } | null>(null);
+
+  // Images state for cards
+  const [coverImages, setCoverImages] = useState<Record<string, string>>({});
 
   const tabs = ['Dashboard', 'Formatos', 'Referências', 'Projetos'];
 
