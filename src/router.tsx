@@ -1,4 +1,4 @@
-console.log("ROUTER MODULE LOADING");
+console.log("ROUTER MODULE LOADING AT " + new Date().toISOString());
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
