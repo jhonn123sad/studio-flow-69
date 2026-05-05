@@ -63,6 +63,12 @@ const App = () => {
   const [projectPriority, setProjectPriority] = useState('medium');
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [isSubmittingProj, setIsSubmittingProj] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<{
+    type: 'format' | 'reference' | 'project';
+    id: string;
+    title: string;
+    description: string;
+  } | null>(null);
 
   const tabs = ['Dashboard', 'Formatos', 'Referências', 'Projetos'];
 
