@@ -1,0 +1,1 @@
+// Arquivo desativado para teste nuclear de HTML puro.
