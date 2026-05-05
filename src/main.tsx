@@ -1,21 +1,12 @@
-import { createRootRoute } from "@tanstack/react-router";
 import React, { useEffect, useState } from 'react'
-
-export const Route = createRootRoute({
-  component: ClickDebugApp,
-});
+import ReactDOM from 'react-dom/client'
 
 function ClickDebugApp() {
   const [count, setCount] = useState(0)
   const [lastEvent, setLastEvent] = useState('Nenhum evento ainda')
 
   useEffect(() => {
-    console.log('[CLICK DEBUG] App montou via __root.tsx')
-    
-    // Forçar scroll para o topo e garantir que não há nada cobrindo
-    window.scrollTo(0, 0);
-    document.body.style.overflow = 'auto';
-    document.documentElement.style.overflow = 'auto';
+    console.log('[CLICK DEBUG] App montou')
 
     const handleDocumentClick = (event: MouseEvent) => {
       console.log('[CLICK DEBUG] document click', event.target)
@@ -86,7 +77,6 @@ function ClickDebugApp() {
         </p>
 
         <button
-          id="debug-button"
           type="button"
           onClick={(event) => {
             event.preventDefault()
@@ -118,3 +108,15 @@ function ClickDebugApp() {
     </div>
   )
 }
+
+const rootElement = document.getElementById('root')
+
+if (!rootElement) {
+  throw new Error('Elemento #root não encontrado no index.html')
+}
+
+ReactDOM.createRoot(rootElement).render(
+  <React.StrictMode>
+    <ClickDebugApp />
+  </React.StrictMode>
+)
