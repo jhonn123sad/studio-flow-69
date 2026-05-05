@@ -2,14 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 
 export const Route = createFileRoute("/_authenticated/")({
-  component: ClickTest,
+  component: () => <ClickTest />,
 });
 
 function ClickTest() {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    console.log('[CLICK TEST] componente montou index');
+    console.log('[CLICK TEST] Renderizado via arrow');
   }, []);
 
   return (
@@ -21,19 +21,21 @@ function ClickTest() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'yellow', // Cor gritante para confirmar render
+        backgroundColor: 'orange',
         pointerEvents: 'auto'
       }}
     >
-      <h1>CONTADOR: {count}</h1>
+      <h1 id="count-display">CLIQUES: {count}</h1>
       <button
+        id="test-button"
+        type="button"
         onClick={() => {
-          console.log('[CLICK TEST] CLIQUE NO BOTAO');
+          console.log('[CLICK TEST] BOTAO OK');
           setCount(c => c + 1);
         }}
-        style={{ padding: '20px', fontSize: '20px', cursor: 'pointer' }}
+        style={{ padding: '20px', fontSize: '2rem', cursor: 'pointer' }}
       >
-        CLIQUE AQUI
+        TESTAR
       </button>
     </div>
   );
