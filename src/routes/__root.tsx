@@ -6,14 +6,20 @@ export const Route = createRootRoute({
     useEffect(() => {
       console.log('[CLICK TEST] componente raiz montou');
       
-      // Forçar pointer-events no root por segurança
-      const root = document.getElementById('root');
-      if (root) {
-        root.style.pointerEvents = 'auto';
-        root.style.minHeight = '100vh';
-      }
-      document.body.style.pointerEvents = 'auto';
-      document.documentElement.style.pointerEvents = 'auto';
+      const fixPointerEvents = () => {
+        document.documentElement.style.pointerEvents = 'auto';
+        document.body.style.pointerEvents = 'auto';
+        const root = document.getElementById('root');
+        if (root) {
+          root.style.pointerEvents = 'auto';
+          root.style.minHeight = '100vh';
+        }
+      };
+
+      fixPointerEvents();
+      // Reforçar periodicamente caso algum script injetado mude
+      const interval = setInterval(fixPointerEvents, 1000);
+      return () => clearInterval(interval);
     }, []);
 
     return (
