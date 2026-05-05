@@ -59,7 +59,7 @@ const App = () => {
   
   // Loading states
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState('');
+  const [statusMsg, setStatusMsg] = useState('');
   
   // Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -90,222 +90,172 @@ const App = () => {
 
   const tabs = ['Dashboard', 'Formatos', 'Referências', 'Projetos'];
 
-  const handleTestClick = () => {
-    setClicks(prev => prev + 1);
-    console.log('[APP] clique funcionando');
+  const loadStats = async () => {
+    try {
+      const [f, r, p, l, i, n, t] = await Promise.all([
+        supabase.from('content_formats').select('*', { count: 'exact', head: true }),
+        supabase.from('reference_categories').select('*', { count: 'exact', head: true }),
+        supabase.from('projects').select('*', { count: 'exact', head: true }),
+        supabase.from('app_links').select('*', { count: 'exact', head: true }),
+        supabase.from('app_images').select('*', { count: 'exact', head: true }),
+        supabase.from('app_notes').select('*', { count: 'exact', head: true }),
+        supabase.from('project_tasks').select('*', { count: 'exact', head: true }).eq('completed', false)
+      ]);
+
+      setStats({
+        formats: f.count || 0,
+        references: r.count || 0,
+        projects: p.count || 0,
+        links: l.count || 0,
+        images: i.count || 0,
+        notes: n.count || 0,
+        tasks: t.count || 0
+      });
+    } catch (e) { console.error('Error loading stats', e); }
   };
 
-  const handleTestSupabase = async () => {
-    setSupabaseStatus('Testando Supabase...');
+  const loadCoverImages = async (ids: string[]) => {
+    if (ids.length === 0) return;
     try {
-      const { data, error } = await supabase
-        .from('content_formats')
-        .select('id')
-        .limit(1);
-
-      if (error) {
-        setSupabaseStatus(formatSupabaseError(error));
-      } else {
-        setSupabaseStatus('Supabase conectado com sucesso.');
+      const { data } = await supabase
+        .from('app_images')
+        .select('parent_id, image_url')
+        .in('parent_id', ids);
+      
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach(img => {
+          if (!map[img.parent_id]) map[img.parent_id] = img.image_url;
+        });
+        setCoverImages(prev => ({ ...prev, ...map }));
       }
-    } catch (err) {
-      setSupabaseStatus('Erro inesperado: ' + (err instanceof Error ? err.message : String(err)));
-    }
+    } catch (e) { console.error('Error loading covers', e); }
   };
 
   const loadFormats = async () => {
-    setLoadingFormats(true);
-    setFormatStatus('Carregando formatos...');
+    setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('content_formats')
-        .select('id, title, description, status, created_at')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        setFormatStatus(formatSupabaseError(error));
-      } else {
+      const { data, error } = await supabase.from('content_formats').select('*').order('created_at', { ascending: false });
+      if (error) setStatusMsg(formatSupabaseError(error));
+      else {
         setFormats(data || []);
-        setFormatStatus('');
+        loadCoverImages((data || []).map(d => d.id));
       }
-    } catch (err) {
-      setFormatStatus('Erro ao carregar: ' + (err instanceof Error ? err.message : String(err)));
-    } finally {
-      setLoadingFormats(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const loadReferences = async () => {
-    setLoadingReferences(true);
-    setReferenceStatus('Carregando referências...');
+    setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('reference_categories')
-        .select('id, name, description, icon, color, created_at')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        setReferenceStatus(formatSupabaseError(error));
-      } else {
+      const { data, error } = await supabase.from('reference_categories').select('*').order('created_at', { ascending: false });
+      if (error) setStatusMsg(formatSupabaseError(error));
+      else {
         setReferences(data || []);
-        setReferenceStatus('');
+        loadCoverImages((data || []).map(d => d.id));
       }
-    } catch (err) {
-      setReferenceStatus('Erro ao carregar: ' + (err instanceof Error ? err.message : String(err)));
-    } finally {
-      setLoadingReferences(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const loadProjects = async () => {
-    setLoadingProjects(true);
-    setProjectStatus('Carregando projetos...');
+    setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('id, title, description, status, priority, created_at')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        setProjectStatus(formatSupabaseError(error));
-      } else {
+      const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+      if (error) setStatusMsg(formatSupabaseError(error));
+      else {
         setProjects(data || []);
-        setProjectStatus('');
+        loadCoverImages((data || []).map(d => d.id));
       }
-    } catch (err) {
-      setProjectStatus('Erro ao carregar: ' + (err instanceof Error ? err.message : String(err)));
-    } finally {
-      setLoadingProjects(false);
-    }
+    } finally { setLoading(false); }
   };
 
   useEffect(() => {
+    if (activeTab === 'Dashboard') loadStats();
     if (activeTab === 'Formatos') loadFormats();
     if (activeTab === 'Referências') loadReferences();
     if (activeTab === 'Projetos') loadProjects();
   }, [activeTab]);
 
   const handleSaveFormat = async (e: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!title.trim()) {
-      setFormatStatus('Informe um título.');
-      return;
-    }
+    e.preventDefault();
+    if (!title.trim()) return setStatusMsg('Informe um título.');
     setIsSubmitting(true);
-    setFormatStatus('Salvando...');
     try {
-      if (editingFormatId) {
-        const { error } = await supabase.from('content_formats').update({ title, description }).eq('id', editingFormatId);
-        if (error) setFormatStatus(formatSupabaseError(error));
-        else { setFormatStatus('Formato atualizado com sucesso.'); resetForm(); loadFormats(); }
+      if (editingId) {
+        const { error } = await supabase.from('content_formats').update({ title, description }).eq('id', editingId);
+        if (error) setStatusMsg(formatSupabaseError(error));
+        else { setStatusMsg('Formato atualizado com sucesso.'); setEditingId(null); setTitle(''); setDescription(''); loadFormats(); }
       } else {
         const { error } = await supabase.from('content_formats').insert({ title, description, status: 'active' });
-        if (error) setFormatStatus(formatSupabaseError(error));
-        else { setFormatStatus('Formato salvo com sucesso.'); resetForm(); loadFormats(); }
+        if (error) setStatusMsg(formatSupabaseError(error));
+        else { setStatusMsg('Formato salvo com sucesso.'); setTitle(''); setDescription(''); loadFormats(); }
       }
-    } catch (err) { setFormatStatus('Erro ao salvar: ' + (err as any).message); }
-    finally { setIsSubmitting(false); }
+    } finally { setIsSubmitting(false); }
   };
-
-  const handleEdit = (format: ContentFormat) => {
-    setEditingFormatId(format.id);
-    setTitle(format.title);
-    setDescription(format.description || '');
-    setFormatStatus('');
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Excluir este formato?')) return;
-    setFormatStatus('Excluindo...');
-    try {
-      const { error } = await supabase.from('content_formats').delete().eq('id', id);
-      if (error) setFormatStatus(formatSupabaseError(error));
-      else { setFormatStatus('Formato excluído com sucesso.'); loadFormats(); }
-    } catch (err) { setFormatStatus('Erro ao excluir: ' + (err as any).message); }
-  };
-
-  const resetForm = () => { setEditingFormatId(null); setTitle(''); setDescription(''); };
 
   const handleSaveReference = async (e: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!refName.trim()) { setReferenceStatus('Informe um nome.'); return; }
-    setIsSubmittingRef(true);
-    setReferenceStatus('Salvando...');
+    e.preventDefault();
+    if (!refName.trim()) return setStatusMsg('Informe um nome.');
+    setIsSubmitting(true);
     try {
       const payload = { name: refName, description: refDescription, color: refColor || '#2563eb' };
-      if (editingRefId) {
-        const { error } = await supabase.from('reference_categories').update(payload).eq('id', editingRefId);
-        if (error) setReferenceStatus(formatSupabaseError(error));
-        else { setReferenceStatus('Referência atualizada com sucesso.'); resetRefForm(); loadReferences(); }
+      if (editingId) {
+        const { error } = await supabase.from('reference_categories').update(payload).eq('id', editingId);
+        if (error) setStatusMsg(formatSupabaseError(error));
+        else { setStatusMsg('Referência atualizada com sucesso.'); setEditingId(null); setRefName(''); setRefDescription(''); setRefColor(''); loadReferences(); }
       } else {
         const { error } = await supabase.from('reference_categories').insert(payload);
-        if (error) setReferenceStatus(formatSupabaseError(error));
-        else { setReferenceStatus('Referência salva com sucesso.'); resetRefForm(); loadReferences(); }
+        if (error) setStatusMsg(formatSupabaseError(error));
+        else { setStatusMsg('Referência salva com sucesso.'); setRefName(''); setRefDescription(''); setRefColor(''); loadReferences(); }
       }
-    } catch (err) { setReferenceStatus('Erro ao salvar: ' + (err as any).message); }
-    finally { setIsSubmittingRef(false); }
+    } finally { setIsSubmitting(false); }
   };
-
-  const handleEditRef = (ref: ReferenceCategory) => {
-    setEditingRefId(ref.id);
-    setRefName(ref.name);
-    setRefDescription(ref.description || '');
-    setRefColor(ref.color || '');
-    setReferenceStatus('');
-  };
-
-  const handleDeleteRef = async (id: string) => {
-    if (!window.confirm('Excluir esta referência?')) return;
-    setReferenceStatus('Excluindo...');
-    try {
-      const { error } = await supabase.from('reference_categories').delete().eq('id', id);
-      if (error) setReferenceStatus(formatSupabaseError(error));
-      else { setReferenceStatus('Referência excluída com sucesso.'); loadReferences(); }
-    } catch (err) { setReferenceStatus('Erro ao excluir: ' + (err as any).message); }
-  };
-
-  const resetRefForm = () => { setEditingRefId(null); setRefName(''); setRefDescription(''); setRefColor(''); };
 
   const handleSaveProject = async (e: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!projectTitle.trim()) { setProjectStatus('Informe um título.'); return; }
-    setIsSubmittingProj(true);
-    setProjectStatus('Salvando...');
+    e.preventDefault();
+    if (!projectTitle.trim()) return setStatusMsg('Informe um título.');
+    setIsSubmitting(true);
     try {
       const payload = { title: projectTitle, description: projectDescription, status: projectProjStatus, priority: projectPriority };
-      if (editingProjectId) {
-        const { error } = await supabase.from('projects').update(payload).eq('id', editingProjectId);
-        if (error) setProjectStatus(formatSupabaseError(error));
-        else { setProjectStatus('Projeto atualizado com sucesso.'); resetProjectForm(); loadProjects(); }
+      if (editingId) {
+        const { error } = await supabase.from('projects').update(payload).eq('id', editingId);
+        if (error) setStatusMsg(formatSupabaseError(error));
+        else { setStatusMsg('Projeto atualizado com sucesso.'); setEditingId(null); setProjectTitle(''); setProjectDescription(''); loadProjects(); }
       } else {
         const { error } = await supabase.from('projects').insert(payload);
-        if (error) setProjectStatus(formatSupabaseError(error));
-        else { setProjectStatus('Projeto salva com sucesso.'); resetProjectForm(); loadProjects(); }
+        if (error) setStatusMsg(formatSupabaseError(error));
+        else { setStatusMsg('Projeto salvo com sucesso.'); setProjectTitle(''); setProjectDescription(''); loadProjects(); }
       }
-    } catch (err) { setProjectStatus('Erro ao salvar: ' + (err as any).message); }
-    finally { setIsSubmittingProj(false); }
+    } finally { setIsSubmitting(false); }
   };
 
-  const handleEditProject = (proj: Project) => {
-    setEditingProjectId(proj.id);
-    setProjectTitle(proj.title);
-    setProjectDescription(proj.description || '');
-    setProjectProjStatus(proj.status);
-    setProjectPriority(proj.priority);
-    setProjectStatus('');
-  };
-
-  const handleDeleteProject = async (id: string) => {
-    if (!window.confirm('Excluir este projeto?')) return;
-    setProjectStatus('Excluindo...');
+  const handleDelete = async (table: string, id: string) => {
+    if (!window.confirm('Excluir este item?')) return;
     try {
-      const { error } = await supabase.from('projects').delete().eq('id', id);
-      if (error) setProjectStatus(formatSupabaseError(error));
-      else { setProjectStatus('Projeto excluído com sucesso.'); loadProjects(); }
-    } catch (err) { setProjectStatus('Erro ao excluir: ' + (err as any).message); }
+      const { error } = await supabase.from(table).delete().eq('id', id);
+      if (error) setStatusMsg(formatSupabaseError(error));
+      else {
+        setStatusMsg('Item excluído.');
+        if (table === 'content_formats') loadFormats();
+        if (table === 'reference_categories') loadReferences();
+        if (table === 'projects') loadProjects();
+      }
+    } catch (e) { setStatusMsg('Erro ao excluir'); }
   };
 
-  const resetProjectForm = () => { setEditingProjectId(null); setProjectTitle(''); setProjectDescription(''); setProjectProjStatus('planning'); setProjectPriority('medium'); };
+  const filteredFormats = useMemo(() => formats.filter(f => 
+    f.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (f.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+  ), [formats, searchQuery]);
+
+  const filteredRefs = useMemo(() => references.filter(r => 
+    r.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (r.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+  ), [references, searchQuery]);
+
+  const filteredProjects = useMemo(() => projects.filter(p => 
+    p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (p.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+  ), [projects, searchQuery]);
 
   return (
     <div className="container">
@@ -316,155 +266,196 @@ const App = () => {
 
       <nav className="tabs">
         {tabs.map(tab => (
-          <button key={tab} type="button" onClick={() => setActiveTab(tab)} className={activeTab === tab ? 'active' : ''}>{tab}</button>
+          <button key={tab} type="button" onClick={() => { setActiveTab(tab); setEditingId(null); setSearchQuery(''); }} className={activeTab === tab ? 'active' : ''}>{tab}</button>
         ))}
       </nav>
 
-      <main className="content">
+      {statusMsg && <div className="card" style={{ backgroundColor: '#eff6ff', color: '#1e40af', fontWeight: 'bold' }}>{statusMsg}</div>}
+
+      <main>
         {activeTab === 'Dashboard' && (
+          <div className="fade-in">
+            <div className="stats-grid">
+              <div className="stat-card"><div className="stat-value">{stats.formats}</div><div className="stat-label">Formatos</div></div>
+              <div className="stat-card"><div className="stat-value">{stats.references}</div><div className="stat-label">Referências</div></div>
+              <div className="stat-card"><div className="stat-value">{stats.projects}</div><div className="stat-label">Projetos</div></div>
+              <div className="stat-card"><div className="stat-value">{stats.links}</div><div className="stat-label">Links</div></div>
+              <div className="stat-card"><div className="stat-value">{stats.images}</div><div className="stat-label">Imagens</div></div>
+              <div className="stat-card"><div className="stat-value">{stats.notes}</div><div className="stat-label">Notas/Prompts</div></div>
+              <div className="stat-card" style={{ borderColor: '#f87171' }}><div className="stat-value" style={{ color: '#ef4444' }}>{stats.tasks}</div><div className="stat-label">Tasks Pendentes</div></div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+              <div className="card">
+                <h3>Ações Rápidas</h3>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '1rem' }}>
+                  <button onClick={() => setActiveTab('Formatos')} className="btn-primary">Novo Formato</button>
+                  <button onClick={() => setActiveTab('Referências')} className="btn-primary">Nova Referência</button>
+                  <button onClick={() => setActiveTab('Projetos')} className="btn-primary">Novo Projeto</button>
+                </div>
+              </div>
+              <div className="card">
+                <h3>Conexão Supabase</h3>
+                <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>{supabaseStatus}</p>
+                <button onClick={async () => {
+                  setSupabaseStatus('Testando...');
+                  const { error } = await supabase.from('content_formats').select('id').limit(1);
+                  setSupabaseStatus(error ? formatSupabaseError(error) : 'Supabase conectado com sucesso.');
+                }} className="btn-primary" style={{ backgroundColor: '#10b981' }}>Testar Conexão</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab !== 'Dashboard' && (
           <>
             <div className="card">
-              <h2>Dashboard</h2>
-              <p>Dashboard funcionando</p>
+              <h3>{editingId ? 'Editar' : 'Novo'} {activeTab.slice(0, -1)}</h3>
+              <form onSubmit={activeTab === 'Formatos' ? handleSaveFormat : activeTab === 'Referências' ? handleSaveReference : handleSaveProject}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                  {activeTab === 'Formatos' && (
+                    <>
+                      <input placeholder="Título" value={title} onChange={e => setTitle(e.target.value)} />
+                      <input placeholder="Descrição" value={description} onChange={e => setDescription(e.target.value)} />
+                    </>
+                  )}
+                  {activeTab === 'Referências' && (
+                    <>
+                      <input placeholder="Nome" value={refName} onChange={e => setRefName(e.target.value)} />
+                      <input placeholder="Descrição" value={refDescription} onChange={e => setRefDescription(e.target.value)} />
+                      <input placeholder="Cor (hex)" value={refColor} onChange={e => setRefColor(e.target.value)} />
+                    </>
+                  )}
+                  {activeTab === 'Projetos' && (
+                    <>
+                      <input placeholder="Título" value={projectTitle} onChange={e => setProjectTitle(e.target.value)} />
+                      <input placeholder="Descrição" value={projectDescription} onChange={e => setProjectDescription(e.target.value)} />
+                      <select value={projectProjStatus} onChange={e => setProjectProjStatus(e.target.value)}>
+                        <option value="planning">Planejamento</option>
+                        <option value="active">Ativo</option>
+                        <option value="completed">Concluído</option>
+                      </select>
+                      <select value={projectPriority} onChange={e => setProjectPriority(e.target.value)}>
+                        <option value="low">Baixa</option>
+                        <option value="medium">Média</option>
+                        <option value="high">Alta</option>
+                      </select>
+                    </>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="submit" disabled={isSubmitting} className="btn-primary">
+                    {editingId ? 'Atualizar' : 'Salvar'}
+                  </button>
+                  {editingId && <button type="button" onClick={() => { setEditingId(null); setTitle(''); setDescription(''); setRefName(''); setProjectTitle(''); }} className="btn-primary" style={{ backgroundColor: '#64748b' }}>Cancelar</button>}
+                </div>
+              </form>
             </div>
-            <div className="card">
-              <h3>Conexão Supabase</h3>
-              <button type="button" onClick={handleTestSupabase} className="btn-primary" style={{ backgroundColor: '#10b981', marginTop: '10px' }}>Testar Supabase</button>
-              <p className="status" style={{ marginTop: '10px', fontWeight: 'bold' }}>Status: {supabaseStatus}</p>
+
+            <div className="search-container">
+              <input 
+                className="search-input" 
+                placeholder={`Buscar em ${activeTab.toLowerCase()}...`} 
+                value={searchQuery} 
+                onChange={e => setSearchQuery(e.target.value)} 
+              />
             </div>
+
+            {loading ? <p>Carregando...</p> : (
+              <div className="masonry-grid">
+                {activeTab === 'Formatos' && filteredFormats.map(f => (
+                  <div key={f.id} className="masonry-card">
+                    {coverImages[f.id] && (
+                      <div className="card-image-container">
+                        <img src={coverImages[f.id]} className="card-image" alt={f.title} />
+                      </div>
+                    )}
+                    <div className="card-content">
+                      <span className="card-label">Formato</span>
+                      <h4 className="card-title">{f.title}</h4>
+                      <p className="card-description">{f.description || 'Sem descrição.'}</p>
+                    </div>
+                    <div className="card-actions">
+                      <button onClick={() => setSelectedEntity({ type: 'format', id: f.id, title: f.title, description: f.description || '' })} className="btn-primary" style={{ flex: 2 }}>Abrir</button>
+                      <button onClick={() => { setEditingId(f.id); setTitle(f.title); setDescription(f.description || ''); }} className="btn-primary" style={{ backgroundColor: '#64748b', flex: 1 }}>Editar</button>
+                      <button onClick={() => handleDelete('content_formats', f.id)} className="btn-primary" style={{ backgroundColor: '#ef4444', flex: 1 }}>X</button>
+                    </div>
+                  </div>
+                ))}
+
+                {activeTab === 'Referências' && filteredRefs.map(r => (
+                  <div key={r.id} className="masonry-card" style={{ borderLeft: `4px solid ${r.color || '#2563eb'}` }}>
+                    {coverImages[r.id] && (
+                      <div className="card-image-container">
+                        <img src={coverImages[r.id]} className="card-image" alt={r.name} />
+                      </div>
+                    )}
+                    <div className="card-content">
+                      <span className="card-label">Referência</span>
+                      <h4 className="card-title">{r.name}</h4>
+                      <p className="card-description">{r.description || 'Sem descrição.'}</p>
+                    </div>
+                    <div className="card-actions">
+                      <button onClick={() => setSelectedEntity({ type: 'reference', id: r.id, title: r.name, description: r.description || '' })} className="btn-primary" style={{ flex: 2 }}>Abrir</button>
+                      <button onClick={() => { setEditingId(r.id); setRefName(r.name); setRefDescription(r.description || ''); setRefColor(r.color || ''); }} className="btn-primary" style={{ backgroundColor: '#64748b', flex: 1 }}>Editar</button>
+                      <button onClick={() => handleDelete('reference_categories', r.id)} className="btn-primary" style={{ backgroundColor: '#ef4444', flex: 1 }}>X</button>
+                    </div>
+                  </div>
+                ))}
+
+                {activeTab === 'Projetos' && filteredProjects.map(p => (
+                  <div key={p.id} className="masonry-card">
+                    {coverImages[p.id] && (
+                      <div className="card-image-container">
+                        <img src={coverImages[p.id]} className="card-image" alt={p.title} />
+                      </div>
+                    )}
+                    <div className="card-content">
+                      <span className="card-label">Projeto • {p.status}</span>
+                      <h4 className="card-title">{p.title}</h4>
+                      <p className="card-description">{p.description || 'Sem descrição.'}</p>
+                      <div style={{ fontSize: '0.7rem', fontWeight: 'bold', color: p.priority === 'high' ? '#ef4444' : '#64748b' }}>
+                        PRIORIDADE: {p.priority.toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="card-actions">
+                      <button onClick={() => setSelectedEntity({ type: 'project', id: p.id, title: p.title, description: p.description || '' })} className="btn-primary" style={{ flex: 2 }}>Abrir</button>
+                      <button onClick={() => { setEditingId(p.id); setProjectTitle(p.title); setProjectDescription(p.description || ''); setProjectProjStatus(p.status); setProjectPriority(p.priority); }} className="btn-primary" style={{ backgroundColor: '#64748b', flex: 1 }}>Editar</button>
+                      <button onClick={() => handleDelete('projects', p.id)} className="btn-primary" style={{ backgroundColor: '#ef4444', flex: 1 }}>X</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {!loading && (
+              (activeTab === 'Formatos' && filteredFormats.length === 0) ||
+              (activeTab === 'Referências' && filteredRefs.length === 0) ||
+              (activeTab === 'Projetos' && filteredProjects.length === 0)
+            ) && (
+              <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
+                <p>Nenhum item encontrado.</p>
+              </div>
+            )}
           </>
         )}
-
-        {activeTab === 'Formatos' && (
-          <div className="card">
-            <h2>Formatos</h2>
-            <p>Organize formatos de conteúdo para usar nos seus projetos.</p>
-            <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px' }}>
-              <h3>{editingFormatId ? 'Editar Formato' : 'Novo Formato'}</h3>
-              <form onSubmit={handleSaveFormat}>
-                <div style={{ marginBottom: '10px' }}><label>Título:</label><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: '100%', padding: '8px' }} /></div>
-                <div style={{ marginBottom: '10px' }}><label>Descrição:</label><textarea value={description} onChange={(e) => setDescription(e.target.value)} style={{ width: '100%', padding: '8px', minHeight: '60px' }} /></div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={(e) => handleSaveFormat(e as any)} disabled={isSubmitting} className="btn-primary">{editingFormatId ? 'Atualizar formato' : 'Salvar formato'}</button>
-                  {editingFormatId && <button type="button" onClick={resetForm} className="btn-primary" style={{ backgroundColor: '#6b7280' }}>Cancelar edição</button>}
-                </div>
-              </form>
-            </div>
-            {formatStatus && <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f3f4f6', borderRadius: '4px', fontWeight: 'bold' }}>{formatStatus}</div>}
-            <div style={{ marginTop: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3>Lista de Formatos</h3><button type="button" onClick={loadFormats} disabled={loadingFormats} style={{ padding: '5px 10px' }}>Carregar formatos</button></div>
-              {loadingFormats ? <p>Carregando formatos...</p> : formats.length === 0 ? <p>Nenhum formato criado ainda.</p> : (
-                <div style={{ display: 'grid', gap: '10px', marginTop: '10px' }}>
-                  {formats.map(format => (
-                    <div key={format.id} className="card" style={{ margin: 0, padding: '15px' }}>
-                      <h4 style={{ margin: '0 0 5px 0' }}>{format.title}</h4>
-                      <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>{format.description}</p>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <button type="button" onClick={() => setSelectedEntity({ type: 'format', id: format.id, title: format.title, description: format.description || '' })} style={{ padding: '5px 10px', fontSize: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px' }}>Abrir</button>
-                        <button type="button" onClick={() => handleEdit(format)} style={{ padding: '5px 10px', fontSize: '12px' }}>Editar</button>
-                        <button type="button" onClick={() => handleDelete(format.id)} style={{ padding: '5px 10px', fontSize: '12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px' }}>Excluir</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'Referências' && (
-          <div className="card">
-            <h2>Referências</h2>
-            <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px' }}>
-              <h3>{editingRefId ? 'Editar Referência' : 'Nova Referência'}</h3>
-              <form onSubmit={handleSaveReference}>
-                <div style={{ marginBottom: '10px' }}><label>Nome:</label><input type="text" value={refName} onChange={(e) => setRefName(e.target.value)} style={{ width: '100%', padding: '8px' }} /></div>
-                <div style={{ marginBottom: '10px' }}><label>Descrição:</label><textarea value={refDescription} onChange={(e) => setRefDescription(e.target.value)} style={{ width: '100%', padding: '8px', minHeight: '60px' }} /></div>
-                <div style={{ marginBottom: '10px' }}><label>Cor:</label><input type="text" value={refColor} placeholder="#2563eb" onChange={(e) => setRefColor(e.target.value)} style={{ width: '100%', padding: '8px' }} /></div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={(e) => handleSaveReference(e as any)} disabled={isSubmittingRef} className="btn-primary">{editingRefId ? 'Atualizar referência' : 'Salvar referência'}</button>
-                  {editingRefId && <button type="button" onClick={resetRefForm} className="btn-primary" style={{ backgroundColor: '#6b7280' }}>Cancelar edição</button>}
-                </div>
-              </form>
-            </div>
-            {referenceStatus && <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f3f4f6', borderRadius: '4px', fontWeight: 'bold' }}>{referenceStatus}</div>}
-            <div style={{ marginTop: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3>Lista de Categorias</h3><button type="button" onClick={loadReferences} disabled={loadingReferences} style={{ padding: '5px 10px' }}>Carregar referências</button></div>
-              {loadingReferences ? <p>Carregando referências...</p> : references.length === 0 ? <p>Nenhuma referência criada ainda.</p> : (
-                <div style={{ display: 'grid', gap: '10px', marginTop: '10px' }}>
-                  {references.map(ref => (
-                    <div key={ref.id} className="card" style={{ margin: 0, padding: '15px', borderLeft: `5px solid ${ref.color || '#2563eb'}` }}>
-                      <h4 style={{ margin: 0 }}>{ref.name}</h4>
-                      <p style={{ margin: '10px 0', fontSize: '14px', color: '#666' }}>{ref.description}</p>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <button type="button" onClick={() => setSelectedEntity({ type: 'reference', id: ref.id, title: ref.name, description: ref.description || '' })} style={{ padding: '5px 10px', fontSize: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px' }}>Abrir</button>
-                        <button type="button" onClick={() => handleEditRef(ref)} style={{ padding: '5px 10px', fontSize: '12px' }}>Editar</button>
-                        <button type="button" onClick={() => handleDeleteRef(ref.id)} style={{ padding: '5px 10px', fontSize: '12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px' }}>Excluir</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'Projetos' && (
-          <div className="card">
-            <h2>Projetos</h2>
-            <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px' }}>
-              <h3>{editingProjectId ? 'Editar Projeto' : 'Novo Projeto'}</h3>
-              <form onSubmit={handleSaveProject}>
-                <div style={{ marginBottom: '10px' }}><label>Título:</label><input type="text" value={projectTitle} onChange={(e) => setProjectTitle(e.target.value)} style={{ width: '100%', padding: '8px' }} /></div>
-                <div style={{ marginBottom: '10px' }}><label>Descrição:</label><textarea value={projectDescription} onChange={(e) => setProjectDescription(e.target.value)} style={{ width: '100%', padding: '8px', minHeight: '60px' }} /></div>
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                  <div style={{ flex: 1 }}><label>Status:</label><select value={projectProjStatus} onChange={(e) => setProjectProjStatus(e.target.value)} style={{ width: '100%', padding: '8px' }}><option value="planning">Planejamento</option><option value="active">Ativo</option><option value="paused">Pausado</option><option value="completed">Concluído</option><option value="archived">Arquivado</option></select></div>
-                  <div style={{ flex: 1 }}><label>Prioridade:</label><select value={projectPriority} onChange={(e) => setProjectPriority(e.target.value)} style={{ width: '100%', padding: '8px' }}><option value="low">Baixa</option><option value="medium">Média</option><option value="high">Alta</option><option value="urgent">Urgente</option></select></div>
-                </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={(e) => handleSaveProject(e as any)} disabled={isSubmittingProj} className="btn-primary">{editingProjectId ? 'Atualizar projeto' : 'Salvar projeto'}</button>
-                  {editingProjectId && <button type="button" onClick={resetProjectForm} className="btn-primary" style={{ backgroundColor: '#6b7280' }}>Cancelar edição</button>}
-                </div>
-              </form>
-            </div>
-            {projectStatus && <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f3f4f6', borderRadius: '4px', fontWeight: 'bold' }}>{projectStatus}</div>}
-            <div style={{ marginTop: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3>Lista de Projetos</h3><button type="button" onClick={loadProjects} disabled={loadingProjects} style={{ padding: '5px 10px' }}>Carregar projetos</button></div>
-              {loadingProjects ? <p>Carregando projetos...</p> : projects.length === 0 ? <p>Nenhum projeto criado ainda.</p> : (
-                <div style={{ display: 'grid', gap: '10px', marginTop: '10px' }}>
-                  {projects.map(proj => (
-                    <div key={proj.id} className="card" style={{ margin: 0, padding: '15px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><h4 style={{ margin: 0 }}>{proj.title}</h4><div style={{ display: 'flex', gap: '5px' }}><span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '10px', backgroundColor: '#e5e7eb' }}>{proj.status}</span><span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '10px', backgroundColor: proj.priority === 'urgent' ? '#fee2e2' : '#fef3c7' }}>{proj.priority}</span></div></div>
-                      <p style={{ margin: '10px 0', fontSize: '14px', color: '#666' }}>{proj.description}</p>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <button type="button" onClick={() => setSelectedEntity({ type: 'project', id: proj.id, title: proj.title, description: proj.description || '' })} style={{ padding: '5px 10px', fontSize: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px' }}>Abrir</button>
-                        <button type="button" onClick={() => handleEditProject(proj)} style={{ padding: '5px 10px', fontSize: '12px' }}>Editar</button>
-                        <button type="button" onClick={() => handleDeleteProject(proj.id)} style={{ padding: '5px 10px', fontSize: '12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px' }}>Excluir</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {selectedEntity && (
-          <EntityDetail 
-            entityType={selectedEntity.type}
-            entityId={selectedEntity.id}
-            entityTitle={selectedEntity.title}
-            entityDescription={selectedEntity.description}
-            onClose={() => setSelectedEntity(null)}
-          />
-        )}
-
-        <div className="card test-section">
-          <h3>Teste de Interatividade</h3>
-          <button type="button" onClick={handleTestClick} className="btn-primary">Testar clique</button>
-          <p className="status">Cliques: {clicks}</p>
-        </div>
       </main>
+
+      {selectedEntity && (
+        <EntityDetail 
+          entityType={selectedEntity.type}
+          entityId={selectedEntity.id}
+          entityTitle={selectedEntity.title}
+          entityDescription={selectedEntity.description}
+          onClose={() => {
+            setSelectedEntity(null);
+            // Refresh cover images in case one was added
+            if (activeTab === 'Formatos') loadFormats();
+            if (activeTab === 'Referências') loadReferences();
+            if (activeTab === 'Projetos') loadProjects();
+          }}
+        />
+      )}
     </div>
   );
 };
