@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './integrations/supabase/client';
 import { formatSupabaseError } from './lib/supabase-errors';
 import EntityDetail from './components/EntityDetail';
@@ -26,6 +26,14 @@ interface Project {
   description: string | null;
   status: string;
   priority: string;
+  created_at: string;
+}
+
+interface AppImage {
+  id: string;
+  parent_type: string;
+  parent_id: string;
+  image_url: string;
   created_at: string;
 }
 
