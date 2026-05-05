@@ -2,92 +2,72 @@ import { createRootRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 
 export const Route = createRootRoute({
-  component: () => {
-    const [count, setCount] = useState(0);
+  component: RootComponent,
+});
 
-    useEffect(() => {
-      console.log('[CLICK TEST] Root montado');
-      
-      // Limpeza agressiva de qualquer overlay persistente via DOM real
-      const clearOverlays = () => {
-        const fixedElements = document.querySelectorAll('*');
-        fixedElements.forEach((el: any) => {
-          const style = window.getComputedStyle(el);
-          if (
-            (style.position === 'fixed' || style.position === 'absolute') && 
-            (style.zIndex && parseInt(style.zIndex) > 100)
-          ) {
-            // Se não for o nosso container, esconde
-            if (!el.id?.includes('click-test')) {
-               el.style.display = 'none';
-               el.style.pointerEvents = 'none';
-            }
-          }
-        });
-      };
-      
-      clearOverlays();
-      const interval = setInterval(clearOverlays, 1000);
-      return () => clearInterval(interval);
-    }, []);
+function RootComponent() {
+  const [count, setCount] = useState(0);
 
-    return (
-      <div 
-        id="click-test-bypass-root"
-        style={{ 
-          margin: 0, 
-          padding: 0, 
-          minHeight: '100vh', 
-          width: '100vw',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#ffffff',
-          fontFamily: 'system-ui, sans-serif',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          zIndex: 9999999,
-          pointerEvents: 'auto'
+  useEffect(() => {
+    console.log('[CLICK TEST] Root montado v2');
+    
+    const clearBodyAttributes = () => {
+      document.body.removeAttribute('data-radix-scroll-block');
+      document.body.style.pointerEvents = 'auto';
+      document.body.style.overflow = 'auto';
+      document.documentElement.style.pointerEvents = 'auto';
+    };
+
+    clearBodyAttributes();
+    const interval = setInterval(clearBodyAttributes, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div 
+      id="click-test-bypass-root"
+      style={{ 
+        position: 'fixed',
+        inset: 0,
+        zIndex: 999999999,
+        backgroundColor: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'auto',
+        userSelect: 'none'
+      }}
+    >
+      <h1 style={{ fontSize: '3rem', margin: '1rem' }}>BYPASS AGRESSIVO</h1>
+      <p style={{ fontSize: '1.5rem', margin: '1rem' }}>
+        Cliques detectados: <strong style={{ color: 'red' }}>{count}</strong>
+      </p>
+      <button
+        id="click-test-button"
+        type="button"
+        onClick={() => {
+          console.log('[CLICK TEST] CLIQUE REAL');
+          setCount(c => c + 1);
+        }}
+        style={{
+          padding: '2rem 4rem',
+          fontSize: '2rem',
+          cursor: 'pointer',
+          backgroundColor: 'blue',
+          color: 'white',
+          border: 'none',
+          borderRadius: '1rem',
+          pointerEvents: 'auto',
+          zIndex: 1000000000
         }}
       >
-        <h1 style={{ fontSize: '40px', color: '#111', marginBottom: '20px' }}>
-          BYPASS TOTAL: Teste de Clique
-        </h1>
-        
-        <p style={{ fontSize: '24px', color: '#444', marginBottom: '40px' }}>
-          Contador: <span style={{ fontWeight: 'bold' }}>{count}</span>
-        </p>
-
-        <button
-          id="click-test-button"
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            console.log('[CLICK TEST] Botão clicado via Root');
-            setCount(c => c + 1);
-          }}
-          style={{
-            padding: '24px 48px',
-            fontSize: '24px',
-            fontWeight: 'bold',
-            color: 'white',
-            backgroundColor: 'black',
-            border: 'none',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            pointerEvents: 'auto',
-            zIndex: 10000000
-          }}
-        >
-          CLIQUE AQUI
-        </button>
-
-        <div style={{ marginTop: '50px', fontSize: '16px', color: '#999' }}>
-          Se não aumentar, o problema é externo ao código do app.
-        </div>
+        TESTAR CLIQUE
+      </button>
+      
+      <div style={{ marginTop: '2rem', textAlign: 'center', maxWidth: '80%' }}>
+        <p>Se este botão não mudar o número vermelho, o problema está fora do React (Iframe/Preview Layer).</p>
       </div>
-    );
-  },
-});
+    </div>
+  );
+}
