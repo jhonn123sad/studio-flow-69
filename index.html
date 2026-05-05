@@ -55,8 +55,6 @@
         font-size: 16px;
         font-weight: 700;
         cursor: pointer;
-        z-index: 1000;
-        position: relative;
       }
 
       #status {
@@ -81,26 +79,22 @@
     </div>
 
     <script>
-      (function() {
-        let count = 0;
-        console.log('[HTML PURO] página carregou');
+      let count = 0;
 
-        const btn = document.getElementById('btn');
-        const status = document.getElementById('status');
+      console.log('[HTML PURO] página carregou');
 
-        if (btn) {
-          btn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            count++;
-            console.log('[HTML PURO] botão clicado', count);
-            status.textContent = 'Cliques: ' + count;
-          });
-        }
+      const btn = document.getElementById('btn');
+      const status = document.getElementById('status');
 
-        window.addEventListener('click', function (event) {
-          console.log('[HTML PURO] window click', event.target);
-        });
-      })();
+      btn.addEventListener('click', function () {
+        count++;
+        console.log('[HTML PURO] botão clicado', count);
+        status.textContent = 'Cliques: ' + count;
+      });
+
+      window.addEventListener('click', function (event) {
+        console.log('[HTML PURO] window click', event.target);
+      });
     </script>
   </body>
 </html>
