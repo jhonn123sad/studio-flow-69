@@ -11,6 +11,11 @@ function ClickDebugApp() {
 
   useEffect(() => {
     console.log('[CLICK DEBUG] App montou via __root.tsx')
+    
+    // Forçar scroll para o topo e garantir que não há nada cobrindo
+    window.scrollTo(0, 0);
+    document.body.style.overflow = 'auto';
+    document.documentElement.style.overflow = 'auto';
 
     const handleDocumentClick = (event: MouseEvent) => {
       console.log('[CLICK DEBUG] document click', event.target)
@@ -65,7 +70,7 @@ function ClickDebugApp() {
         }}
       >
         <h1 style={{ fontSize: 28, margin: '0 0 12px' }}>
-          Teste real de clique (__root)
+          Teste real de clique
         </h1>
 
         <p style={{ fontSize: 16, color: '#475569', marginBottom: 20 }}>
@@ -81,6 +86,7 @@ function ClickDebugApp() {
         </p>
 
         <button
+          id="debug-button"
           type="button"
           onClick={(event) => {
             event.preventDefault()
