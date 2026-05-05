@@ -1,110 +1,129 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { 
-  LayoutDashboard, 
-  Video, 
-  Bookmark, 
-  Briefcase, 
-  Plus,
-  ArrowRight
-} from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/")({
-  component: DashboardPage,
+  component: PainelPessoal,
 });
 
-function DashboardPage() {
-  const { data: formatsCount } = useQuery({
-    queryKey: ["formats-count"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("formats")
-        .select("*", { count: 'exact', head: true });
-      if (error) throw error;
-      return count || 0;
-    },
-    retry: false
-  });
+function PainelPessoal() {
+  const [status, setStatus] = useState("Aguardando ação...");
+  const [formats, setFormats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const { data: referencesCount } = useQuery({
-    queryKey: ["references-count"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("references")
-        .select("*", { count: 'exact', head: true });
-      if (error) throw error;
-      return count || 0;
-    },
-    retry: false
-  });
+  const testSupabase = async () => {
+    setStatus("Testando Supabase...");
+    try {
+      const { data, error } = await supabase
+        .from('formats')
+        .select('id')
+        .limit(1);
 
-  const { data: projectsCount } = useQuery({
-    queryKey: ["projects-count"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("projects")
-        .select("*", { count: 'exact', head: true });
-      if (error) throw error;
-      return count || 0;
-    },
-    retry: false
-  });
+      if (error) {
+        setStatus("Erro Supabase: " + error.message);
+      } else {
+        setStatus("Supabase conectado com sucesso.");
+      }
+    } catch (err: any) {
+      setStatus("Erro inesperado: " + (err.message || String(err)));
+    }
+  };
 
-  const stats = [
-    { label: "Formatos", value: formatsCount ?? 0, icon: Video, color: "text-blue-500", bg: "bg-blue-50", link: "/formats" },
-    { label: "Referências", value: referencesCount ?? 0, icon: Bookmark, color: "text-purple-500", bg: "bg-purple-50", link: "/references" },
-    { label: "Projetos", value: projectsCount ?? 0, icon: Briefcase, color: "text-amber-500", bg: "bg-amber-50", link: "/projects" },
-  ];
+  const loadFormats = async () => {
+    setLoading(true);
+    setStatus("Carregando formatos...");
+    try {
+      const { data, error } = await supabase
+        .from('formats')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        setStatus("Erro ao carregar: " + error.message);
+      } else {
+        setFormats(data || []);
+        setStatus("Formatos carregados.");
+      }
+    } catch (err: any) {
+      setStatus("Erro inesperado: " + (err.message || String(err)));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createTestFormat = async () => {
+    setStatus("Criando formato teste...");
+    try {
+      const { data, error } = await supabase
+        .from('formats')
+        .insert({
+          title: 'Formato teste ' + new Date().toLocaleTimeString(),
+          description: 'Criado pelo painel pessoal'
+        })
+        .select();
+
+      if (error) {
+        setStatus("Erro ao criar: " + error.message);
+      } else {
+        setStatus("Formato criado com sucesso.");
+        loadFormats();
+      }
+    } catch (err: any) {
+      setStatus("Erro inesperado: " + (err.message || String(err)));
+    }
+  };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Bem-vindo ao seu Painel</h1>
-        <p className="text-muted-foreground">Visão geral da sua produção e organização.</p>
-      </div>
+    <div style={{ maxWidth: '600px', margin: '40px auto', padding: '20px' }}>
+      <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 10px 0', color: '#1e293b' }}>Painel Pessoal</h1>
+        <p style={{ color: '#64748b', marginBottom: '25px' }}>Organização de produção de conteúdo</p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {stats.map((stat) => (
-          <Card key={stat.label} className="border-border/50 shadow-sm hover:shadow-md transition-all">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total de {stat.label}
-              </CardTitle>
-              <div className={`${stat.bg} ${stat.color} p-2 rounded-lg`}>
-                <stat.icon className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <Button variant="link" size="sm" className="px-0 mt-2 h-auto text-xs" asChild>
-                <Link to={stat.link}>Ver todos <ArrowRight className="ml-1 h-3 w-3" /></Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '25px', flexWrap: 'wrap' }}>
+          <button 
+            type="button" 
+            onClick={testSupabase}
+            style={{ padding: '10px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}
+          >
+            Testar Supabase
+          </button>
+          <button 
+            type="button" 
+            onClick={loadFormats}
+            style={{ padding: '10px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}
+          >
+            Carregar formatos
+          </button>
+          <button 
+            type="button" 
+            onClick={createTestFormat}
+            style={{ padding: '10px 16px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}
+          >
+            Criar formato teste
+          </button>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader>
-            <CardTitle>Ações Rápidas</CardTitle>
-            <CardDescription>Crie novos itens rapidamente.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Button className="w-full justify-start gap-2" asChild>
-              <Link to="/formats"><Plus className="h-4 w-4" /> Novo Formato</Link>
-            </Button>
-            <Button className="w-full justify-start gap-2" variant="outline" asChild>
-              <Link to="/references"><Plus className="h-4 w-4" /> Nova Referência</Link>
-            </Button>
-            <Button className="w-full justify-start gap-2" variant="outline" asChild>
-              <Link to="/projects"><Plus className="h-4 w-4" /> Novo Projeto</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div style={{ padding: '12px', backgroundColor: '#f1f5f9', borderRadius: '6px', marginBottom: '25px', fontSize: '14px', border: '1px solid #e2e8f0' }}>
+          <strong>Status:</strong> <span style={{ color: status.includes('Erro') ? '#ef4444' : '#0f172a' }}>{status}</span>
+        </div>
+
+        <div>
+          <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '15px', color: '#334155' }}>Lista de Formatos</h2>
+          {loading ? (
+            <p>Carregando...</p>
+          ) : formats.length === 0 ? (
+            <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>Nenhum formato encontrado. Clique em carregar.</p>
+          ) : (
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {formats.map((f) => (
+                <li key={f.id} style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <strong style={{ color: '#1e293b' }}>{f.title}</strong>
+                  <span style={{ fontSize: '13px', color: '#64748b' }}>{f.description}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
