@@ -9,7 +9,7 @@ const App = () => {
       height: '100vh',
       display: 'flex',
       alignItems: 'center',
-      justify-content: center,
+      justifyContent: 'center',
       background: '#f8fafc',
       fontFamily: 'Arial, sans-serif'
     }}>
@@ -27,8 +27,9 @@ const App = () => {
         <p style={{ margin: '0 0 24px', fontSize: '18px', color: '#475569' }}>HTML puro (via React para bypass) funcionando.</p>
         <button 
           onClick={() => {
-            console.log('[HTML PURO] botão clicado', count + 1);
-            setCount(c => c + 1);
+            const next = count + 1;
+            console.log('[HTML PURO] botão clicado', next);
+            setCount(next);
           }}
           style={{
             appearance: 'auto',
