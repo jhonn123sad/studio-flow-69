@@ -1,13 +1,8 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = "https://gxkavqgjiunwqbhqhsuy.supabase.co";
-const supabaseKey = "sb_publishable_I7vku5wUpmeHhoHC0IFyZA_sU9LoWHh";
+const supabaseUrl = 'https://gxkavqgjiunwqbhqhsuy.supabase.co';
+const supabaseAnonKey = 'sb_publishable_I7vku5wUpmeHhoHC0IFyZA_sU9LoWHh';
 
-export const isSupabaseConfigured = true;
+console.log('[SUPABASE] Inicializando cliente...');
 
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  }
-});
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

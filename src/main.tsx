@@ -1,16 +1,19 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { RouterProvider } from "@tanstack/react-router";
-import { getRouter } from "./router";
-import "./styles.css";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
 
-const router = getRouter();
+console.log('[APP] Inicializando entrada limpa...');
 
-const rootElement = document.getElementById('root')
-if (!rootElement) throw new Error('Root element not found')
+const rootElement = document.getElementById('root');
 
-ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
-    <RouterProvider router={router} />
-  </React.StrictMode>
-)
+if (rootElement) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+} else {
+  console.error('[APP] Elemento #root não encontrado no DOM');
+}
