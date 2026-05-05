@@ -11,7 +11,6 @@ interface ReferenceCategory {
   created_at: string;
 }
 
-
 interface ContentFormat {
   id: string;
   title: string;
@@ -20,6 +19,14 @@ interface ContentFormat {
   created_at: string;
 }
 
+interface Project {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  created_at: string;
+}
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -34,6 +41,7 @@ const App = () => {
   const [description, setDescription] = useState('');
   const [editingFormatId, setEditingFormatId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Referências State
   const [references, setReferences] = useState<ReferenceCategory[]>([]);
   const [loadingReferences, setLoadingReferences] = useState(false);
@@ -43,6 +51,17 @@ const App = () => {
   const [refColor, setRefColor] = useState('');
   const [editingRefId, setEditingRefId] = useState<string | null>(null);
   const [isSubmittingRef, setIsSubmittingRef] = useState(false);
+
+  // Projetos State
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [projectStatus, setProjectStatus] = useState('');
+  const [projectTitle, setProjectTitle] = useState('');
+  const [projectDescription, setProjectDescription] = useState('');
+  const [projectProjStatus, setProjectProjStatus] = useState('planning');
+  const [projectPriority, setProjectPriority] = useState('medium');
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [isSubmittingProj, setIsSubmittingProj] = useState(false);
 
   const tabs = ['Dashboard', 'Formatos', 'Referências', 'Projetos'];
 
@@ -92,15 +111,6 @@ const App = () => {
     }
   };
 
-  useEffect(() => {
-    if (activeTab === 'Formatos') {
-      loadFormats();
-    }
-    if (activeTab === 'Referências') {
-      loadReferences();
-    }
-  }, [activeTab]);
-
   // CRUD Referências
   const loadReferences = async () => {
     setLoadingReferences(true);
@@ -122,6 +132,119 @@ const App = () => {
     } finally {
       setLoadingReferences(false);
     }
+  };
+
+  // CRUD Projetos
+  const loadProjects = async () => {
+    setLoadingProjects(true);
+    setProjectStatus('Carregando projetos...');
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, title, description, status, priority, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        setProjectStatus(formatSupabaseError(error));
+      } else {
+        setProjects(data || []);
+        setProjectStatus('');
+      }
+    } catch (err) {
+      setProjectStatus('Erro ao carregar: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'Formatos') {
+      loadFormats();
+    }
+    if (activeTab === 'Referências') {
+      loadReferences();
+    }
+    if (activeTab === 'Projetos') {
+      loadProjects();
+    }
+  }, [activeTab]);
+
+  const handleSaveFormat = async (e: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!title.trim()) {
+      setFormatStatus('Informe um título.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFormatStatus('Salvando...');
+
+    try {
+      if (editingFormatId) {
+        const { error } = await supabase
+          .from('content_formats')
+          .update({ title, description })
+          .eq('id', editingFormatId);
+
+        if (error) {
+          setFormatStatus(formatSupabaseError(error));
+        } else {
+          setFormatStatus('Formato atualizado com sucesso.');
+          resetForm();
+          loadFormats();
+        }
+      } else {
+        const { error } = await supabase
+          .from('content_formats')
+          .insert({ title, description, status: 'active' });
+
+        if (error) {
+          setFormatStatus(formatSupabaseError(error));
+        } else {
+          setFormatStatus('Formato salvo com sucesso.');
+          resetForm();
+          loadFormats();
+        }
+      }
+    } catch (err) {
+      setFormatStatus('Erro ao salvar: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (format: ContentFormat) => {
+    setEditingFormatId(format.id);
+    setTitle(format.title);
+    setDescription(format.description || '');
+    setFormatStatus('');
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Excluir este formato?')) return;
+
+    setFormatStatus('Excluindo...');
+    try {
+      const { error } = await supabase
+        .from('content_formats')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        setFormatStatus(formatSupabaseError(error));
+      } else {
+        setFormatStatus('Formato excluído com sucesso.');
+        loadFormats();
+      }
+    } catch (err) {
+      setFormatStatus('Erro ao excluir: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const resetForm = () => {
+    setEditingFormatId(null);
+    setTitle('');
+    setDescription('');
   };
 
   const handleSaveReference = async (e: React.FormEvent) => {
@@ -210,84 +333,93 @@ const App = () => {
     setRefColor('');
   };
 
-
-
-  const handleSaveFormat = async (e: React.FormEvent) => {
+  const handleSaveProject = async (e: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!title.trim()) {
-      setFormatStatus('Informe um título.');
+    if (!projectTitle.trim()) {
+      setProjectStatus('Informe um título.');
       return;
     }
 
-    setIsSubmitting(true);
-    setFormatStatus('Salvando...');
+    setIsSubmittingProj(true);
+    setProjectStatus('Salvando...');
 
     try {
-      if (editingFormatId) {
+      const payload = {
+        title: projectTitle,
+        description: projectDescription,
+        status: projectProjStatus,
+        priority: projectPriority
+      };
+
+      if (editingProjectId) {
         const { error } = await supabase
-          .from('content_formats')
-          .update({ title, description })
-          .eq('id', editingFormatId);
+          .from('projects')
+          .update(payload)
+          .eq('id', editingProjectId);
 
         if (error) {
-          setFormatStatus(formatSupabaseError(error));
+          setProjectStatus(formatSupabaseError(error));
         } else {
-          setFormatStatus('Formato atualizado com sucesso.');
-          resetForm();
-          loadFormats();
+          setProjectStatus('Projeto atualizado com sucesso.');
+          resetProjectForm();
+          loadProjects();
         }
       } else {
         const { error } = await supabase
-          .from('content_formats')
-          .insert({ title, description, status: 'active' });
+          .from('projects')
+          .insert(payload);
 
         if (error) {
-          setFormatStatus(formatSupabaseError(error));
+          setProjectStatus(formatSupabaseError(error));
         } else {
-          setFormatStatus('Formato salvo com sucesso.');
-          resetForm();
-          loadFormats();
+          setProjectStatus('Projeto salva com sucesso.');
+          resetProjectForm();
+          loadProjects();
         }
       }
     } catch (err) {
-      setFormatStatus('Erro ao salvar: ' + (err instanceof Error ? err.message : String(err)));
+      setProjectStatus('Erro ao salvar: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingProj(false);
     }
   };
 
-  const handleEdit = (format: ContentFormat) => {
-    setEditingFormatId(format.id);
-    setTitle(format.title);
-    setDescription(format.description || '');
-    setFormatStatus('');
+  const handleEditProject = (proj: Project) => {
+    setEditingProjectId(proj.id);
+    setProjectTitle(proj.title);
+    setProjectDescription(proj.description || '');
+    setProjectProjStatus(proj.status);
+    setProjectPriority(proj.priority);
+    setProjectStatus('');
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Excluir este formato?')) return;
+  const handleDeleteProject = async (id: string) => {
+    if (!window.confirm('Excluir este projeto?')) return;
 
-    setFormatStatus('Excluindo...');
+    setProjectStatus('Excluindo...');
     try {
       const { error } = await supabase
-        .from('content_formats')
+        .from('projects')
         .delete()
         .eq('id', id);
 
       if (error) {
-        setFormatStatus(formatSupabaseError(error));
+        setProjectStatus(formatSupabaseError(error));
       } else {
-        setFormatStatus('Formato excluído com sucesso.');
-        loadFormats();
+        setProjectStatus('Projeto excluído com sucesso.');
+        loadProjects();
       }
     } catch (err) {
-      setFormatStatus('Erro ao excluir: ' + (err instanceof Error ? err.message : String(err)));
+      setProjectStatus('Erro ao excluir: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
-  const resetForm = () => {
-    setEditingFormatId(null);
-    setTitle('');
-    setDescription('');
+  const resetProjectForm = () => {
+    setEditingProjectId(null);
+    setProjectTitle('');
+    setProjectDescription('');
+    setProjectProjStatus('planning');
+    setProjectPriority('medium');
   };
 
   return (
@@ -335,101 +467,99 @@ const App = () => {
         )}
 
         {activeTab === 'Formatos' && (
-          <>
-            <div className="card">
-              <h2>Formatos</h2>
-              <p>Organize formatos de conteúdo para usar nos seus projetos.</p>
-              
-              <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px' }}>
-                <h3>{editingFormatId ? 'Editar Formato' : 'Novo Formato'}</h3>
-                <form onSubmit={handleSaveFormat}>
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '5px' }}>Título:</label>
-                    <input 
-                      type="text" 
-                      value={title} 
-                      onChange={(e) => setTitle(e.target.value)}
-                      style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-                    />
-                  </div>
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '5px' }}>Descrição:</label>
-                    <textarea 
-                      value={description} 
-                      onChange={(e) => setDescription(e.target.value)}
-                      style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', minHeight: '60px' }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', gap: '10px' }}>
+          <div className="card">
+            <h2>Formatos</h2>
+            <p>Organize formatos de conteúdo para usar nos seus projetos.</p>
+            
+            <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px' }}>
+              <h3>{editingFormatId ? 'Editar Formato' : 'Novo Formato'}</h3>
+              <form onSubmit={handleSaveFormat}>
+                <div style={{ marginBottom: '10px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px' }}>Título:</label>
+                  <input 
+                    type="text" 
+                    value={title} 
+                    onChange={(e) => setTitle(e.target.value)}
+                    style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+                <div style={{ marginBottom: '10px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px' }}>Descrição:</label>
+                  <textarea 
+                    value={description} 
+                    onChange={(e) => setDescription(e.target.value)}
+                    style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', minHeight: '60px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    type="button" 
+                    onClick={(e) => handleSaveFormat(e as any)}
+                    disabled={isSubmitting}
+                    className="btn-primary"
+                  >
+                    {editingFormatId ? 'Atualizar formato' : 'Salvar formato'}
+                  </button>
+                  {editingFormatId && (
                     <button 
                       type="button" 
-                      onClick={(e) => handleSaveFormat(e as any)}
-                      disabled={isSubmitting}
+                      onClick={resetForm}
                       className="btn-primary"
+                      style={{ backgroundColor: '#6b7280' }}
                     >
-                      {editingFormatId ? 'Atualizar formato' : 'Salvar formato'}
+                      Cancelar edição
                     </button>
-                    {editingFormatId && (
-                      <button 
-                        type="button" 
-                        onClick={resetForm}
-                        className="btn-primary"
-                        style={{ backgroundColor: '#6b7280' }}
-                      >
-                        Cancelar edição
-                      </button>
-                    )}
-                  </div>
-                </form>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            {formatStatus && (
+              <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f3f4f6', borderRadius: '4px', fontWeight: 'bold' }}>
+                {formatStatus}
+              </div>
+            )}
+
+            <div style={{ marginTop: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3>Lista de Formatos</h3>
+                <button type="button" onClick={loadFormats} disabled={loadingFormats} style={{ padding: '5px 10px' }}>
+                  Carregar formatos
+                </button>
               </div>
 
-              {formatStatus && (
-                <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f3f4f6', borderRadius: '4px', fontWeight: 'bold' }}>
-                  {formatStatus}
+              {loadingFormats ? (
+                <p>Carregando formatos...</p>
+              ) : formats.length === 0 ? (
+                <p>Nenhum formato criado ainda.</p>
+              ) : (
+                <div style={{ display: 'grid', gap: '10px', marginTop: '10px' }}>
+                  {formats.map(format => (
+                    <div key={format.id} className="card" style={{ margin: 0, padding: '15px' }}>
+                      <h4 style={{ margin: '0 0 5px 0' }}>{format.title}</h4>
+                      <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>{format.description}</p>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button 
+                          type="button" 
+                          onClick={() => handleEdit(format)}
+                          style={{ padding: '5px 10px', fontSize: '12px' }}
+                        >
+                          Editar
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => handleDelete(format.id)}
+                          style={{ padding: '5px 10px', fontSize: '12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
-
-              <div style={{ marginTop: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3>Lista de Formatos</h3>
-                  <button type="button" onClick={loadFormats} disabled={loadingFormats} style={{ padding: '5px 10px' }}>
-                    Carregar formatos
-                  </button>
-                </div>
-
-                {loadingFormats ? (
-                  <p>Carregando formatos...</p>
-                ) : formats.length === 0 ? (
-                  <p>Nenhum formato criado ainda.</p>
-                ) : (
-                  <div style={{ display: 'grid', gap: '10px', marginTop: '10px' }}>
-                    {formats.map(format => (
-                      <div key={format.id} className="card" style={{ margin: 0, padding: '15px' }}>
-                        <h4 style={{ margin: '0 0 5px 0' }}>{format.title}</h4>
-                        <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>{format.description}</p>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                          <button 
-                            type="button" 
-                            onClick={() => handleEdit(format)}
-                            style={{ padding: '5px 10px', fontSize: '12px' }}
-                          >
-                            Editar
-                          </button>
-                          <button 
-                            type="button" 
-                            onClick={() => handleDelete(format.id)}
-                            style={{ padding: '5px 10px', fontSize: '12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                          >
-                            Excluir
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
-          </>
+          </div>
         )}
 
         {activeTab === 'Referências' && (
@@ -543,11 +673,138 @@ const App = () => {
 
         {activeTab === 'Projetos' && (
           <div className="card">
-            <h2>{activeTab}</h2>
-            <p>{activeTab} funcionando</p>
+            <h2>Projetos</h2>
+            <p>Organize projetos de produção de conteúdo.</p>
+
+            <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px' }}>
+              <h3>{editingProjectId ? 'Editar Projeto' : 'Novo Projeto'}</h3>
+              <form onSubmit={handleSaveProject}>
+                <div style={{ marginBottom: '10px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px' }}>Título:</label>
+                  <input 
+                    type="text" 
+                    value={projectTitle} 
+                    onChange={(e) => setProjectTitle(e.target.value)}
+                    style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+                <div style={{ marginBottom: '10px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px' }}>Descrição:</label>
+                  <textarea 
+                    value={projectDescription} 
+                    onChange={(e) => setProjectDescription(e.target.value)}
+                    style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', minHeight: '60px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', marginBottom: '5px' }}>Status:</label>
+                    <select 
+                      value={projectProjStatus} 
+                      onChange={(e) => setProjectProjStatus(e.target.value)}
+                      style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                    >
+                      <option value="planning">Planejamento</option>
+                      <option value="active">Ativo</option>
+                      <option value="paused">Pausado</option>
+                      <option value="completed">Concluído</option>
+                      <option value="archived">Arquivado</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', marginBottom: '5px' }}>Prioridade:</label>
+                    <select 
+                      value={projectPriority} 
+                      onChange={(e) => setProjectPriority(e.target.value)}
+                      style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                    >
+                      <option value="low">Baixa</option>
+                      <option value="medium">Média</option>
+                      <option value="high">Alta</option>
+                      <option value="urgent">Urgente</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    type="button" 
+                    onClick={(e) => handleSaveProject(e as any)}
+                    disabled={isSubmittingProj}
+                    className="btn-primary"
+                  >
+                    {editingProjectId ? 'Atualizar projeto' : 'Salvar projeto'}
+                  </button>
+                  {editingProjectId && (
+                    <button 
+                      type="button" 
+                      onClick={resetProjectForm}
+                      className="btn-primary"
+                      style={{ backgroundColor: '#6b7280' }}
+                    >
+                      Cancelar edição
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            {projectStatus && (
+              <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f3f4f6', borderRadius: '4px', fontWeight: 'bold' }}>
+                {projectStatus}
+              </div>
+            )}
+
+            <div style={{ marginTop: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3>Lista de Projetos</h3>
+                <button type="button" onClick={loadProjects} disabled={loadingProjects} style={{ padding: '5px 10px' }}>
+                  Carregar projetos
+                </button>
+              </div>
+
+              {loadingProjects ? (
+                <p>Carregando projetos...</p>
+              ) : projects.length === 0 ? (
+                <p>Nenhum projeto criado ainda.</p>
+              ) : (
+                <div style={{ display: 'grid', gap: '10px', marginTop: '10px' }}>
+                  {projects.map(proj => (
+                    <div key={proj.id} className="card" style={{ margin: 0, padding: '15px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <h4 style={{ margin: '0 0 5px 0' }}>{proj.title}</h4>
+                        <div style={{ display: 'flex', gap: '5px' }}>
+                          <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '10px', backgroundColor: '#e5e7eb', color: '#374151', fontWeight: 'bold' }}>
+                            {proj.status}
+                          </span>
+                          <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '10px', backgroundColor: proj.priority === 'urgent' ? '#fee2e2' : '#fef3c7', color: proj.priority === 'urgent' ? '#991b1b' : '#92400e', fontWeight: 'bold' }}>
+                            {proj.priority}
+                          </span>
+                        </div>
+                      </div>
+                      <p style={{ margin: '10px 0', fontSize: '14px', color: '#666' }}>{proj.description}</p>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button 
+                          type="button" 
+                          onClick={() => handleEditProject(proj)}
+                          style={{ padding: '5px 10px', fontSize: '12px' }}
+                        >
+                          Editar
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => handleDeleteProject(proj.id)}
+                          style={{ padding: '5px 10px', fontSize: '12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
-
 
         <div className="card test-section">
           <h3>Teste de Interatividade</h3>
