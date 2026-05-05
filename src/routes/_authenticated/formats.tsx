@@ -91,7 +91,7 @@ function FormatsPage() {
 
   const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<FormatFormValues>({
     resolver: zodResolver(formatSchema),
-    defaultValues: { status: "Ativo", description: "", tags: "" }
+    defaultValues: { title: "", status: "Ativo", description: "", tags: "" }
   });
 
   const filteredFormats = formats.filter((f: any) => 
