@@ -52,9 +52,9 @@ export const Route = createFileRoute("/_authenticated/formats")({
 
 const formatSchema = z.object({
   title: z.string().min(2, "Título muito curto"),
-  description: z.string().default(""),
-  status: z.string().default("Ativo"),
-  tags: z.string().default(""),
+  description: z.string(),
+  status: z.string(),
+  tags: z.string(),
 });
 
 type FormatFormValues = z.infer<typeof formatSchema>;
