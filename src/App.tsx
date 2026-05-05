@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './integrations/supabase/client';
 import { formatSupabaseError } from './lib/supabase-errors';
+import EntityDetail from './components/EntityDetail';
 
 interface ReferenceCategory {
   id: string;
