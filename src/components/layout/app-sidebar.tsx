@@ -5,8 +5,6 @@ import {
   Briefcase, 
   Library, 
   Settings,
-  ChevronRight,
-  Plus
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
@@ -19,10 +17,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
-  SidebarFooter,
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/hooks/use-auth";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -31,16 +26,7 @@ const mainItems = [
   { title: "Projetos", url: "/projects", icon: Briefcase },
 ];
 
-const libraryItems = [
-  { title: "Biblioteca", url: "/library", icon: Library },
-];
-
-const settingItems = [
-  { title: "Configurações", url: "/settings", icon: Settings },
-];
-
 export function AppSidebar() {
-  const { user } = useAuth();
   const currentPath = useRouterState({
     select: (router) => router.location.pathname,
   });
@@ -58,7 +44,7 @@ export function AppSidebar() {
             P
           </div>
           <span className="font-semibold text-lg tracking-tight group-data-[collapsible=icon]:hidden">
-            Painel
+            Painel Pessoal
           </span>
         </div>
       </SidebarHeader>
@@ -81,62 +67,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Biblioteca</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {libraryItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                    <Link to={item.url} className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Preferências</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {settingItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                    <Link to={item.url} className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter className="p-4 border-t border-border/50">
-        <div className="flex items-center gap-3 px-2 py-1.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
-          <Avatar className="h-8 w-8 border border-border/50">
-            <AvatarImage src={user?.user_metadata?.avatar_url} />
-            <AvatarFallback className="bg-muted text-xs">
-              {user?.email?.[0].toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-medium truncate">
-              {user?.user_metadata?.full_name || user?.email?.split('@')[0]}
-            </span>
-            <span className="text-[10px] text-muted-foreground truncate uppercase tracking-wider font-semibold">
-              Pro Plan
-            </span>
-          </div>
-        </div>
-      </SidebarFooter>
     </Sidebar>
   );
 }
