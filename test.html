@@ -1,0 +1,13 @@
+<!doctype html>
+<html>
+<body>
+  <h1>Test Page</h1>
+  <button id="btn">Click me</button>
+  <div id="out">0</div>
+  <script>
+    document.getElementById('btn').onclick = () => {
+      document.getElementById('out').innerText = parseInt(document.getElementById('out').innerText) + 1;
+    };
+  </script>
+</body>
+</html>
