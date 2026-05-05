@@ -37,7 +37,7 @@ function ProjectsPage() {
 
   const { data: projectsData, isLoading } = useQuery({
     queryKey: ["projects"],
-    enabled: false, // Desativado temporariamente para isolamento
+    enabled: true,
     queryFn: async () => {
       try {
         const { data, error } = await supabase
