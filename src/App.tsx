@@ -12,12 +12,14 @@ interface ReferenceCategory {
 }
 
 
+interface ContentFormat {
   id: string;
   title: string;
   description: string | null;
   status: string | null;
   created_at: string;
 }
+
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -31,6 +33,7 @@ const App = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [editingFormatId, setEditingFormatId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // Referências State
   const [references, setReferences] = useState<ReferenceCategory[]>([]);
   const [loadingReferences, setLoadingReferences] = useState(false);
@@ -40,8 +43,6 @@ const App = () => {
   const [refColor, setRefColor] = useState('');
   const [editingRefId, setEditingRefId] = useState<string | null>(null);
   const [isSubmittingRef, setIsSubmittingRef] = useState(false);
-
-
 
   const tabs = ['Dashboard', 'Formatos', 'Referências', 'Projetos'];
 
